@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CANDID — Application</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -566,8 +567,8 @@ function renderAuth(mode='login', role='candidate') {
       <div class="field"><label>Email</label><input type="email" id="a-email" placeholder="votre@email.com" value="sofia@email.com"></div>
       <div class="field"><label>Mot de passe</label><input type="password" id="a-pass" placeholder="••••••••" value="••••••••"></div>
       <div style="display:flex;gap:10px;margin-top:6px">
-        <button class="btn btn-primary btn-full" onclick="login('candidate')">Espace Candidat</button>
-        <button class="btn btn-amber btn-full" onclick="login('recruiter')">Espace Recruteur</button>
+        <button class="btn btn-primary btn-full" onclick="loginWithSupabase()">Se connecter</button>
+        <button class="btn btn-amber btn-full" onclick="loginWithSupabase()">Se connecter (Recruteur)</button>
       </div>
       <div class="row-flex" style="justify-content:center;margin-top:10px;gap:8px">
         <button class="btn btn-ghost" onclick="login('admin')" style="font-size:11px;padding:6px 12px">🛡 Admin CANDID</button>
@@ -612,7 +613,7 @@ function selectRole(role, el) {
       <div class="field"><label>Poste / Métier</label><input type="text" placeholder="UX Designer, Développeur..."></div>
       <div class="field"><label>Mot de passe</label><input type="password" placeholder="Minimum 8 caractères"></div>
       <div class="warn-banner" style="font-size:12px;margin-bottom:14px">📋 J'ai 18 ans ou plus et j'accepte les <a href="#" style="color:var(--amber)">CGU</a> et la <a href="#" style="color:var(--amber)">politique de confidentialité</a></div>
-      <button class="btn btn-primary btn-full" onclick="login('candidate')">Créer mon profil gratuit</button>`;
+      <button class="btn btn-primary btn-full" onclick="registerCandidate()">Créer mon profil gratuit</button>`;
   } else {
     f.innerHTML = `
       <div class="grid2">
@@ -624,7 +625,7 @@ function selectRole(role, el) {
       <div class="field"><label>SIRET</label><input type="text" placeholder="12345678901234" maxlength="14"><div style="font-size:11px;color:var(--muted);margin-top:4px">✓ Vérifié automatiquement via API INSEE</div></div>
       <div class="field"><label>Mot de passe</label><input type="password" placeholder="Minimum 8 caractères"></div>
       <div class="success-banner" style="font-size:12px;margin-bottom:14px">🛡 Votre compte sera activé après validation (≤ 24h). Une CB sera demandée pour accéder aux profils.</div>
-      <button class="btn btn-amber btn-full" onclick="login('recruiter')">Créer mon espace recruteur</button>`;
+      <button class="btn btn-amber btn-full" onclick="registerRecruiter()">Créer mon espace recruteur</button>`;
   }
 }
 
@@ -1963,10 +1964,124 @@ function confirmDelete() {
   notify('Demande de suppression enregistrée. Email de confirmation envoyé.','info');
 }
 
+
+// ════════════════════════════════════════
+// SUPABASE CONFIG — CHANGEZ CES 2 VALEURS
+// Dashboard Supabase > Settings > API
+// ════════════════════════════════════════
+const SUPABASE_URL = 'https://bjuqmrysgpiuswcuuwqs.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdXFtcnlzZ3BpdXN3Y3V1d3FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MDkzMDcsImV4cCI6MjA5MDQ4NTMwN30.mg4bUhh2zeraIeJYcnYCCYKOYk3vMbZpgA5PGxcbWJ8';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ════════════════════════════════════════
+// AUTH SUPABASE (remplace STATE mock)
+// ════════════════════════════════════════
+
+// Inscription candidat
+async function registerCandidate() {
+  const email = document.getElementById('a-email').value;
+  const password = document.getElementById('a-pass').value;
+  const name = document.getElementById('a-name') ? document.getElementById('a-name').value : 'Candidat';
+  if (!email || !password) { notify('Email et mot de passe requis', 'error'); return; }
+  const { data, error } = await _supabase.auth.signUp({
+    email, password,
+    options: { data: { role: 'candidate', name } }
+  });
+  if (error) notify(error.message, 'error');
+  else {
+    notify('Compte créé ! Vérifiez votre email ✓', 'success');
+    setTimeout(() => renderAuth('login'), 2000);
+  }
+}
+
+// Inscription recruteur
+async function registerRecruiter() {
+  const email = document.getElementById('a-email').value;
+  const password = document.getElementById('a-pass').value;
+  const company = document.getElementById('a-company') ? document.getElementById('a-company').value : 'Entreprise';
+  if (!email || !password) { notify('Email et mot de passe requis', 'error'); return; }
+  const { data, error } = await _supabase.auth.signUp({
+    email, password,
+    options: { data: { role: 'recruiter', company } }
+  });
+  if (error) notify(error.message, 'error');
+  else {
+    notify('Compte recruteur créé ! Vérifiez votre email ✓', 'success');
+    setTimeout(() => renderAuth('login'), 2000);
+  }
+}
+
+// Connexion (détecte rôle auto)
+async function loginWithSupabase() {
+  const email = document.getElementById('a-email').value;
+  const password = document.getElementById('a-pass').value;
+  if (!email || !password) { notify('Email et mot de passe requis', 'error'); return; }
+  const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+  if (error) { notify('Email ou mot de passe incorrect', 'error'); return; }
+  const role = data.user.user_metadata?.role || 'candidate';
+  const name = data.user.user_metadata?.name || email.split('@')[0];
+  const company = data.user.user_metadata?.company || '';
+  if (role === 'candidate') {
+    STATE.user = { role: 'candidate', name, initials: name.slice(0,2).toUpperCase(), plan: 'Pro' };
+    document.getElementById('cand-name').textContent = name;
+    document.getElementById('cand-av').textContent = name.slice(0,2).toUpperCase();
+    showScreen('candidate');
+    candPage('home');
+    notify('Bienvenue ' + name + ' ! 👋', 'success');
+  } else if (role === 'recruiter') {
+    STATE.user = { role: 'recruiter', name, company, initials: name.slice(0,2).toUpperCase(), plan: 'Studio' };
+    document.getElementById('rec-name').textContent = name;
+    document.getElementById('rec-av').textContent = name.slice(0,2).toUpperCase();
+    document.getElementById('rec-company').textContent = company;
+    showScreen('recruiter');
+    recPage('home');
+    notify('Bienvenue ' + name + ' ! 👋', 'success');
+  } else {
+    STATE.user = { role: 'admin', name };
+    showScreen('admin');
+    adminPage('overview');
+    notify('Accès admin activé', 'info');
+  }
+}
+
+// Déconnexion
+async function logout() {
+  await _supabase.auth.signOut();
+  STATE.user = null;
+  renderAuth('login');
+  showScreen('auth');
+  notify('Déconnexion réussie', 'info');
+}
+
+// Check session existante au chargement
+async function checkSession() {
+  const { data: { session } } = await _supabase.auth.getSession();
+  if (session) {
+    const role = session.user.user_metadata?.role || 'candidate';
+    const name = session.user.user_metadata?.name || session.user.email.split('@')[0];
+    const company = session.user.user_metadata?.company || '';
+    if (role === 'candidate') {
+      STATE.user = { role: 'candidate', name, initials: name.slice(0,2).toUpperCase(), plan: 'Pro' };
+      document.getElementById('cand-name').textContent = name;
+      document.getElementById('cand-av').textContent = name.slice(0,2).toUpperCase();
+      showScreen('candidate');
+      candPage('home');
+    } else if (role === 'recruiter') {
+      STATE.user = { role: 'recruiter', name, company, initials: name.slice(0,2).toUpperCase(), plan: 'Studio' };
+      document.getElementById('rec-name').textContent = name;
+      document.getElementById('rec-av').textContent = name.slice(0,2).toUpperCase();
+      document.getElementById('rec-company').textContent = company;
+      showScreen('recruiter');
+      recPage('home');
+    }
+  }
+}
+
 // ════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════
 renderAuth('login');
+document.addEventListener('DOMContentLoaded', checkSession);
 </script>
 </body>
 </html>
