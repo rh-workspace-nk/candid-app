@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CANDID — Application</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080B10;--bg2:#0D1117;--bg3:#121820;--surface:#161D27;
+  --border:#1E2A38;--border2:#243344;
+  --cyan:#00F0C8;--cyan2:#00C4A4;--amber:#F4A629;--rose:#FF4D6A;--violet:#8B6BFF;
+  --text:#E8EDF3;--muted:#6A7F96;--dim:#2A3848;
+  --sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px}
+
+/* ── APP SHELL ── */
+#app{width:100%;height:100%;display:flex;flex-direction:column}
+#view{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── SCREEN MANAGER ── */
+.screen{display:none;height:100%;overflow:hidden;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── AUTH ── */
+.auth-wrap{height:100%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.auth-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(0,240,200,.05) 0%,transparent 70%)}
+.auth-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,240,200,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,200,.03) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,black,transparent)}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:440px;position:relative;z-index:1}
+.auth-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--cyan);text-align:center;margin-bottom:6px}
+.auth-logo span{color:var(--text)}
+.auth-subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px}
+.auth-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;padding:8px;border:none;border-radius:8px;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.auth-tab.active{background:var(--surface);color:var(--text)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;letter-spacing:.3px}
+.field input,.field select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:var(--cyan)}
+.field input::placeholder{color:var(--muted)}
+.field select option{background:var(--bg3)}
+.role-select{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.role-btn{border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)}
+.role-btn:hover{border-color:var(--cyan2)}
+.role-btn.active{border-color:var(--cyan);background:rgba(0,240,200,.06)}
+.role-btn .role-icon{font-size:28px;margin-bottom:8px}
+.role-btn .role-name{font-size:13px;font-weight:600}
+.role-btn .role-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;text-decoration:none;border:none;font-family:'DM Sans',sans-serif}
+.btn-primary{background:var(--cyan);color:var(--bg);font-weight:700}
+.btn-primary:hover{background:#00FFD5;transform:translateY(-1px)}
+.btn-amber{background:var(--amber);color:var(--bg);font-weight:700}
+.btn-amber:hover{background:#FFB83F}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-danger{background:rgba(255,77,106,.1);color:var(--rose);border:1px solid rgba(255,77,106,.2)}
+.btn-danger:hover{background:rgba(255,77,106,.15)}
+.btn-full{width:100%;justify-content:center}
+.auth-switch{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
+.auth-switch a{color:var(--cyan);cursor:pointer;text-decoration:none}
+
+/* ── APP LAYOUT ── */
+.app-layout{display:flex;height:100%;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-logo .logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--cyan)}
+.sidebar-logo .logo-text span{color:var(--text)}
+.sidebar-user{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--muted)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 10px}
+.nav-section{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:10px 8px 6px;font-family:'DM Mono',monospace}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .15s;color:var(--muted);font-size:13px;font-weight:500;margin-bottom:2px;position:relative}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(0,240,200,.08);color:var(--cyan);border:1px solid rgba(0,240,200,.1)}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--rose);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.nav-badge.info{background:var(--cyan);color:var(--bg)}
+.sidebar-bottom{padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0}
+.logout-btn{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;padding:8px 10px;border-radius:8px;transition:all .15s;width:100%}
+.logout-btn:hover{background:rgba(255,77,106,.06);color:var(--rose)}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.page-header{padding:20px 28px 0;flex-shrink:0}
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px}
+.page-sub{color:var(--muted);font-size:13px}
+.page-body{flex:1;overflow-y:auto;padding:20px 28px 28px}
+
+/* ── CARDS & COMPONENTS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px}
+.card-sm{padding:14px 16px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card-title .ct-label{display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;letter-spacing:1px}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-change.up{color:#4ade80}
+.stat-change.down{color:var(--rose)}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:500}
+.tag-cyan{background:rgba(0,240,200,.08);border:1px solid rgba(0,240,200,.15);color:var(--cyan2)}
+.tag-amber{background:rgba(244,166,41,.08);border:1px solid rgba(244,166,41,.15);color:var(--amber)}
+.tag-violet{background:rgba(139,107,255,.08);border:1px solid rgba(139,107,255,.15);color:var(--violet)}
+.tag-rose{background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.15);color:var(--rose)}
+.tag-green{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.15);color:#4ade80}
+.tag-gray{background:rgba(106,127,150,.08);border:1px solid rgba(106,127,150,.15);color:var(--muted)}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid rgba(30,42,56,.5);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.01)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%}
+.badge-active{background:rgba(74,222,128,.1);color:#4ade80}.badge-active::before{background:#4ade80}
+.badge-pending{background:rgba(244,166,41,.1);color:var(--amber)}.badge-pending::before{background:var(--amber)}
+.badge-suspended{background:rgba(255,77,106,.1);color:var(--rose)}.badge-suspended::before{background:var(--rose)}
+.badge-verified{background:rgba(0,240,200,.1);color:var(--cyan)}.badge-verified::before{background:var(--cyan)}
+.badge-free{background:rgba(106,127,150,.1);color:var(--muted)}.badge-free::before{background:var(--muted)}
+
+/* ── SEARCH ── */
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;transition:border-color .2s}
+.search-bar:focus-within{border-color:var(--cyan)}
+.search-bar input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px}
+.search-bar input::placeholder{color:var(--muted)}
+
+/* ── FILTERS ── */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;transition:all .15s}
+.filter-chip:hover{border-color:var(--cyan2);color:var(--text)}
+.filter-chip.active{border-color:var(--cyan);background:rgba(0,240,200,.06);color:var(--cyan)}
+
+/* ── PROFILE CARD ── */
+.profile-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;cursor:pointer}
+.profile-card:hover{transform:translateY(-3px);border-color:rgba(0,240,200,.25);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.pc-banner{height:70px;position:relative}
+.pc-av{position:absolute;bottom:-20px;left:18px;width:48px;height:48px;border-radius:12px;border:3px solid var(--bg2);font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.pc-vid-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:3px 8px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:5px}
+.pc-vid-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--rose);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pc-body{padding:28px 16px 16px}
+.pc-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.pc-title{font-size:12px;color:var(--muted);margin-bottom:12px}
+.pc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.pc-score{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.pc-score-bar{flex:1;height:3px;background:var(--dim);border-radius:2px;overflow:hidden}
+.pc-score-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+.pc-score-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--cyan);letter-spacing:1px}
+
+/* ── TABS ── */
+.tabs-row{display:flex;gap:2px;background:var(--bg3);border-radius:10px;padding:3px;width:fit-content}
+.tab-btn{padding:7px 16px;border:none;border-radius:7px;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.tab-btn.active{background:var(--surface);color:var(--text)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:90%;max-width:580px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;transform:scale(.95);transition:transform .2s}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{width:30px;height:30px;border-radius:7px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.modal-body{padding:24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0}
+
+/* ── VIDEO PLAYER ── */
+.vid-player{background:var(--bg3);border-radius:12px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);position:relative;overflow:hidden}
+.vid-play{width:56px;height:56px;border-radius:50%;background:rgba(0,240,200,.15);border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .2s;color:var(--cyan)}
+.vid-play:hover{background:rgba(0,240,200,.25);transform:scale(1.08)}
+
+/* ── PIPELINE KANBAN ── */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;min-height:0}
+.kanban-col{min-width:240px;max-width:240px;display:flex;flex-direction:column;gap:8px}
+.kanban-header{font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;display:flex;align-items:center;justify-content:space-between}
+.kanban-count{font-size:11px;padding:1px 7px;border-radius:10px;font-weight:700}
+.kanban-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s}
+.kanban-card:hover{border-color:rgba(0,240,200,.2);transform:translateY(-1px)}
+.kanban-card .kc-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.kanban-card .kc-role{font-size:11px;color:var(--muted);margin-bottom:8px}
+.kanban-card .kc-foot{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
+.kanban-card .kc-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;flex-shrink:0}
+
+/* ── MESSAGES ── */
+.msg-layout{display:grid;grid-template-columns:280px 1fr;gap:0;height:100%;overflow:hidden;border:1px solid var(--border);border-radius:14px;background:var(--bg2)}
+.msg-list{border-right:1px solid var(--border);overflow-y:auto}
+.msg-item{padding:14px 16px;border-bottom:1px solid rgba(30,42,56,.5);cursor:pointer;transition:background .15s;display:flex;gap:12px;align-items:flex-start}
+.msg-item:hover{background:var(--surface)}
+.msg-item.active{background:rgba(0,240,200,.04);border-left:2px solid var(--cyan)}
+.msg-item .mi-av{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px}
+.msg-item .mi-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.msg-item .mi-preview{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.msg-item .mi-time{font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0}
+.msg-unread{width:7px;height:7px;border-radius:50%;background:var(--cyan);flex-shrink:0;margin-top:6px}
+.msg-chat{display:flex;flex-direction:column;overflow:hidden}
+.msg-chat-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.msg-chat-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg-bubble{max-width:70%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.msg-bubble.out{background:rgba(0,240,200,.1);border:1px solid rgba(0,240,200,.15);align-self:flex-end;border-bottom-right-radius:4px}
+.msg-bubble.in{background:var(--surface);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-bubble-time{font-size:10px;color:var(--muted);margin-top:4px}
+.msg-bubble.out .msg-bubble-time{text-align:right}
+.msg-input-row{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.msg-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none;transition:border-color .2s}
+.msg-input:focus{border-color:var(--cyan)}
+
+/* ── FORMAT CARDS ── */
+.format-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.format-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px;transition:all .2s;cursor:pointer;position:relative}
+.format-card:hover{border-color:var(--border2);background:var(--surface)}
+.format-card.has-content{border-color:rgba(0,240,200,.2)}
+.format-card .fc-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px}
+.format-card .fc-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.format-card .fc-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.format-card .fc-status{position:absolute;top:12px;right:12px;font-size:10px;padding:2px 7px;border-radius:4px}
+.format-card .fc-add{margin-top:14px;width:100%}
+
+/* ── ANALYTICS ── */
+.chart-bar{display:flex;align-items:flex-end;gap:4px;height:80px;padding:0 4px}
+.chart-bar-item{flex:1;border-radius:3px 3px 0 0;transition:height .3s;min-width:6px;position:relative;cursor:default}
+.chart-bar-item:hover::after{content:attr(data-val);position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:10px;white-space:nowrap}
+
+/* ── BILLING ── */
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .2s}
+.plan-card.current{border-color:var(--cyan);background:rgba(0,240,200,.03)}
+.plan-card .plan-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:4px}
+.plan-card .plan-price{font-size:32px;font-weight:700;line-height:1}
+.plan-card .plan-period{font-size:13px;color:var(--muted);margin-left:2px}
+.plan-feature{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;border-bottom:1px solid rgba(30,42,56,.5)}
+.plan-feature:last-child{border-bottom:none}
+.plan-feature .pf-check{color:var(--cyan);font-size:12px}
+.plan-feature.inactive{opacity:.4}
+.plan-feature.inactive .pf-check{color:var(--muted)}
+
+/* ── PROGRESS ── */
+.progress{height:6px;background:var(--dim);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .4s}
+
+/* ── NOTIFICATION ── */
+.notif{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.notif-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;pointer-events:all;animation:slideIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:300px}
+.notif-item.success{border-left:3px solid var(--cyan)}
+.notif-item.error{border-left:3px solid var(--rose)}
+.notif-item.info{border-left:3px solid var(--violet)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeOut{to{opacity:0;transform:translateX(10px)}}
+
+/* ── MISC ── */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.text-cyan{color:var(--cyan)}.text-amber{color:var(--amber)}.text-rose{color:var(--rose)}.text-violet{color:var(--violet)}.text-muted{color:var(--muted)}
+.fw6{font-weight:600}.fw7{font-weight:700}
+.font-mono{font-family:'DM Mono',monospace}
+.bebas{font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+.avatar{border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;flex-shrink:0}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap}
+.section-label{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:12px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-state .es-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.empty-state .es-text{font-size:14px}
+.row-flex{display:flex;align-items:center;gap:10px}
+.gap8{gap:8px}
+.gap12{gap:12px}
+.gap16{gap:16px}
+.mb8{margin-bottom:8px}
+.mb12{margin-bottom:12px}
+.mb16{margin-bottom:16px}
+.mb20{margin-bottom:20px}
+.mb24{margin-bottom:24px}
+.mt8{margin-top:8px}
+.mt12{margin-top:12px}
+.mt16{margin-top:16px}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-wrap:last-child{border-bottom:none}
+.toggle-info .ti-label{font-size:13px;font-weight:500}
+.toggle-info .ti-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle{position:relative;width:38px;height:22px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--dim);border-radius:11px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;bottom:3px;left:3px;background:white;border-radius:50%;transition:transform .2s}
+.toggle input:checked + .toggle-slider{background:var(--cyan)}
+.toggle input:checked + .toggle-slider::before{transform:translateX(16px)}
+.info-banner{background:rgba(139,107,255,.06);border:1px solid rgba(139,107,255,.15);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--violet)}
+.warn-banner{background:rgba(244,166,41,.06);border:1px solid rgba(244,166,41,.15);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--amber)}
+.success-banner{background:rgba(0,240,200,.06);border:1px solid rgba(0,240,200,.15);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="notif" class="notif"></div>
+  <div id="view">
+
+    <!-- ══════════════ AUTH ══════════════ -->
+    <div id="screen-auth" class="screen active">
+      <div class="auth-wrap">
+        <div class="auth-grid"></div>
+        <div class="auth-bg"></div>
+        <div class="auth-box" id="auth-box">
+          <!-- login / register switch via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ CANDIDATE APP ══════════════ -->
+    <div id="screen-candidate" class="screen">
+      <div class="app-layout">
+        <nav class="sidebar" id="sidebar-candidate">
+          <div class="sidebar-logo"><div class="logo-text">CAND<span>ID</span></div></div>
+          <div class="sidebar-user">
+            <div class="user-av" id="cand-av" style="background:linear-gradient(135deg,#00F0C8,#006B5A);color:var(--bg)"></div>
+            <div><div class="user-name" id="cand-name">—</div><div class="user-role">Candidat</div></div>
+          </div>
+          <div class="sidebar-nav">
+            <div class="nav-section">Principal</div>
+            <div class="nav-item active" onclick="candPage('home')" data-page="home"><span class="nav-icon">🏠</span>Tableau de bord</div>
+            <div class="nav-item" onclick="candPage('profile')" data-page="profile"><span class="nav-icon">👤</span>Mon Profil</div>
+            <div class="nav-item" onclick="candPage('formats')" data-page="formats"><span class="nav-icon">🎥</span>Mes Formats</div>
+            <div class="nav-item" onclick="candPage('analytics')" data-page="analytics"><span class="nav-icon">📊</span>Analytics</div>
+            <div class="nav-section">Communication</div>
+            <div class="nav-item" onclick="candPage('messages')" data-page="messages"><span class="nav-icon">💬</span>Messages<span class="nav-badge" id="cand-msg-badge">2</span></div>
+            <div class="nav-item" onclick="candPage('proposals')" data-page="proposals"><span class="nav-icon">📬</span>Propositions<span class="nav-badge info" id="cand-prop-badge">3</span></div>
+            <div class="nav-section">Compte</div>
+            <div class="nav-item" onclick="candPage('subscription')" data-page="subscription"><span class="nav-icon">⭐</span>Abonnement</div>
+            <div class="nav-item" onclick="candPage('settings')" data-page="settings"><span class="nav-icon">⚙</span>Paramètres</div>
+          </div>
+          <div class="sidebar-bottom">
+            <button class="logout-btn" onclick="logout()"><span>🚪</span> Se déconnecter</button>
+          </div>
+        </nav>
+        <div class="main-content" id="cand-content"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ RECRUITER APP ══════════════ -->
+    <div id="screen-recruiter" class="screen">
+      <div class="app-layout">
+        <nav class="sidebar" id="sidebar-recruiter">
+          <div class="sidebar-logo"><div class="logo-text">CAND<span>ID</span></div></div>
+          <div class="sidebar-user">
+            <div class="user-av" id="rec-av" style="background:linear-gradient(135deg,#F4A629,#A06B10);color:var(--bg)"></div>
+            <div><div class="user-name" id="rec-name">—</div><div class="user-role" id="rec-company">Recruteur</div></div>
+          </div>
+          <div class="sidebar-nav">
+            <div class="nav-section">Recherche</div>
+            <div class="nav-item active" onclick="recPage('home')" data-page="home"><span class="nav-icon">🏠</span>Tableau de bord</div>
+            <div class="nav-item" onclick="recPage('search')" data-page="search"><span class="nav-icon">🔍</span>Chercher des talents</div>
+            <div class="nav-item" onclick="recPage('saved')" data-page="saved"><span class="nav-icon">🔖</span>Profils sauvegardés<span class="nav-badge info">5</span></div>
+            <div class="nav-section">Recrutement</div>
+            <div class="nav-item" onclick="recPage('pipeline')" data-page="pipeline"><span class="nav-icon">📋</span>Pipeline</div>
+            <div class="nav-item" onclick="recPage('messages')" data-page="messages"><span class="nav-icon">💬</span>Messages<span class="nav-badge" id="rec-msg-badge">4</span></div>
+            <div class="nav-section">Compte</div>
+            <div class="nav-item" onclick="recPage('billing')" data-page="billing"><span class="nav-icon">💳</span>Abonnement</div>
+            <div class="nav-item" onclick="recPage('settings')" data-page="settings"><span class="nav-icon">⚙</span>Paramètres</div>
+          </div>
+          <div class="sidebar-bottom">
+            <button class="logout-btn" onclick="logout()"><span>🚪</span> Se déconnecter</button>
+          </div>
+        </nav>
+        <div class="main-content" id="rec-content"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ ADMIN ══════════════ -->
+    <div id="screen-admin" class="screen">
+      <div class="app-layout">
+        <nav class="sidebar">
+          <div class="sidebar-logo"><div class="logo-text">CAND<span>ID</span></div></div>
+          <div class="sidebar-user">
+            <div class="user-av" style="background:linear-gradient(135deg,#8B6BFF,#4A2A9A);color:white;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Bebas Neue,sans-serif;font-size:14px">AD</div>
+            <div><div class="user-name">Admin CANDID</div><div class="user-role">Super Admin</div></div>
+          </div>
+          <div class="sidebar-nav">
+            <div class="nav-section">Plateforme</div>
+            <div class="nav-item active" onclick="adminPage('overview')" data-page="overview"><span class="nav-icon">📊</span>Vue d'ensemble</div>
+            <div class="nav-item" onclick="adminPage('users')" data-page="users"><span class="nav-icon">👥</span>Utilisateurs</div>
+            <div class="nav-item" onclick="adminPage('moderation')" data-page="moderation"><span class="nav-icon">🛡</span>Modération<span class="nav-badge" id="admin-mod-badge">7</span></div>
+            <div class="nav-item" onclick="adminPage('subscriptions')" data-page="subscriptions"><span class="nav-icon">💳</span>Abonnements</div>
+            <div class="nav-item" onclick="adminPage('companies')" data-page="companies"><span class="nav-icon">🏢</span>Entreprises<span class="nav-badge" id="admin-comp-badge">3</span></div>
+          </div>
+          <div class="sidebar-bottom">
+            <button class="logout-btn" onclick="logout()"><span>🚪</span> Se déconnecter</button>
+          </div>
+        </nav>
+        <div class="main-content" id="admin-content"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div id="modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const STATE = {
+  user: null,
+  currentPage: null,
+  savedProfiles: ['KM','TN','SL'],
+  pipeline: {
+    contacted: [
+      {id:'KM',name:'Karim Mourad',role:'Senior ML Engineer',score:95,av:'KM',color:'#8B6BFF22',txt:'#8B6BFF',days:'il y a 2j'},
+      {id:'TN',name:'Théo Nguyen',role:'AI/ML Engineer',score:91,av:'TN',color:'#00F0C822',txt:'#00F0C8',days:'il y a 1j'}
+    ],
+    replied:[
+      {id:'SL',name:'Sofia Leclerc',role:'Lead UX Designer',score:88,av:'SL',color:'#00F0C822',txt:'#00F0C8',days:'il y a 3j'}
+    ],
+    interview:[
+      {id:'AR',name:'Amina Rousseau',role:'Growth PM',score:82,av:'AR',color:'#F4A62922',txt:'#F4A629',days:'Demain 14h'}
+    ],
+    offer:[],
+    hired:[]
+  }
+};
+
+// ════════════════════════════════════════
+// MOCK DATA
+// ════════════════════════════════════════
+const TALENTS = [
+  {id:'SL',initials:'SL',name:'Sofia Leclerc',title:'Lead UX Designer',location:'Paris',avail:'Jan. 2025',remote:true,score:88,skills:['Figma','Design System','Prototyping'],sector:'Fintech',exp:'8 ans',salary:'70-85K',formats:['video','portfolio','challenges'],videoLen:'58s',banner:'linear-gradient(135deg,#0D1B2A,#1A3A4A)',avColor:'linear-gradient(135deg,#00F0C8,#006B5A)',avTxt:'var(--bg)',views:247,match:92},
+  {id:'KM',initials:'KM',name:'Karim Mourad',title:'Senior ML Engineer',location:'Remote',avail:'Immédiat',remote:true,score:95,skills:['PyTorch','LLMs','Computer Vision'],sector:'IA',exp:'6 ans',salary:'80-100K',formats:['audio','skillmap','challenges'],videoLen:'—',banner:'linear-gradient(135deg,#1A0D2A,#2D1A4A)',avColor:'linear-gradient(135deg,#8B6BFF,#4A2A9A)',avTxt:'white',views:312,match:95},
+  {id:'AR',initials:'AR',name:'Amina Rousseau',title:'Growth & Product Manager',location:'Lyon',avail:'3 semaines',remote:false,score:82,skills:['B2B SaaS','Analytics','0→1'],sector:'SaaS',exp:'5 ans',salary:'60-75K',formats:['video','recommendations'],videoLen:'52s',banner:'linear-gradient(135deg,#1A1A0D,#3A3A1A)',avColor:'linear-gradient(135deg,#F4A629,#A06B10)',avTxt:'var(--bg)',views:189,match:87},
+  {id:'TN',initials:'TN',name:'Théo Nguyen',title:'AI/ML Engineer',location:'Remote',avail:'2 semaines',remote:true,score:91,skills:['LLM','Python','MLOps'],sector:'IA',exp:'4 ans',salary:'70-90K',formats:['video','portfolio'],videoLen:'61s',banner:'linear-gradient(135deg,#0D1A2A,#1A2A3A)',avColor:'linear-gradient(135deg,#00F0C8,#003A30)',avTxt:'var(--bg)',views:278,match:91},
+  {id:'LB',initials:'LB',name:'Léa Bernard',title:'Machine Learning Lead',location:'Paris',avail:'Immédiat',remote:true,score:87,skills:['TensorFlow','Data Engineering','Leadership'],sector:'Healthtech',exp:'7 ans',salary:'85-105K',formats:['audio','skillmap','challenges'],videoLen:'—',banner:'linear-gradient(135deg,#1A150D,#3A2A1A)',avColor:'linear-gradient(135deg,#F4A629,#7A5010)',avTxt:'var(--bg)',views:203,match:84},
+  {id:'MK',initials:'MK',name:'Mehdi Karray',title:'NLP Researcher',location:'Paris',avail:'1 mois',remote:true,score:79,skills:['NLP','BERT','Transformers'],sector:'IA',exp:'3 ans',salary:'55-70K',formats:['video','challenges'],videoLen:'45s',banner:'linear-gradient(135deg,#1A0D0D,#2A1515)',avColor:'linear-gradient(135deg,#FF4D6A,#8A1525)',avTxt:'white',views:145,match:79},
+];
+
+const MESSAGES = {
+  candidate: [
+    {id:1,from:'TechVision',av:'TV',avColor:'#8B6BFF',preview:'Bonjour, votre profil correspond exactement…',time:'14:32',unread:true,msgs:[
+      {dir:'in',text:'Bonjour Sofia, votre profil correspond exactement à ce que nous cherchons pour notre équipe Product Design. Nous construisons une plateforme B2B dans la fintech — est-ce que vous seriez ouverte à en discuter ?',time:'14:32'},
+      {dir:'out',text:'Bonjour ! Merci pour votre message. Le secteur fintech m\'intéresse effectivement. Pouvez-vous me donner plus de détails sur le poste et la structure de l\'équipe ?',time:'14:45'},
+      {dir:'in',text:'Bien sûr ! Il s\'agit d\'un poste de Lead UX au sein d\'une équipe de 4 designers. Stack : Figma + design system maison. Budget : 78K. Remote first avec 2 jours à Paris par mois.',time:'15:01'}
+    ]},
+    {id:2,from:'StartupScale',av:'SS',avColor:'#00F0C8',preview:'Suite à votre candidature, nous aimerions…',time:'Hier',unread:true,msgs:[
+      {dir:'in',text:'Suite à votre candidature, nous aimerions vous proposer un entretien avec notre CTO la semaine prochaine. Êtes-vous disponible le mardi 14 ou jeudi 16 ?',time:'Hier'}
+    ]},
+    {id:3,from:'InnovateCo',av:'IC',avColor:'#F4A629',preview:'Merci pour l\'échange de ce matin…',time:'Lun.',unread:false,msgs:[
+      {dir:'in',text:'Merci pour l\'échange de ce matin, nous revenons vers vous sous 48h avec une décision.',time:'Lun.'}
+    ]}
+  ],
+  recruiter: [
+    {id:1,from:'Karim Mourad',av:'KM',avColor:'#8B6BFF',preview:'Merci pour votre proposition, ça m\'intéresse…',time:'15:20',unread:true,msgs:[
+      {dir:'out',text:'Bonjour Karim, nous construisons l\'équipe IA de notre startup HealthTech. Votre profil LLM est exactement ce qu\'il nous faut. Budget : 95K + BSPCE. Intéressé pour un call de 30min ?',time:'15:00'},
+      {dir:'in',text:'Merci pour votre proposition, ça m\'intéresse effectivement ! HealthTech + LLM c\'est ma cible. Je suis dispo jeudi ou vendredi cette semaine.',time:'15:20'}
+    ]},
+    {id:2,from:'Sofia Leclerc',av:'SL',avColor:'#00F0C8',preview:'Je regarde votre offre, question sur le remote…',time:'14:10',unread:true,msgs:[
+      {dir:'out',text:'Sofia, votre portfolio 3D est impressionnant. Nous cherchons un Lead UX pour notre équipe à Paris. Remote possible 3j/semaine.',time:'11:30'},
+      {dir:'in',text:'Je regarde votre offre avec intérêt. Question sur le remote : est-ce négociable vers du 4j/semaine remote ?',time:'14:10'}
+    ]},
+    {id:3,from:'Théo Nguyen',av:'TN',avColor:'#00F0C8',preview:'Disponible pour un entretien dès cette semaine',time:'Hier',unread:false,msgs:[
+      {dir:'out',text:'Bonjour Théo, votre profil ML correspond à notre besoin.',time:'Hier'},
+      {dir:'in',text:'Disponible pour un entretien dès cette semaine, je suis très intéressé.',time:'Hier'}
+    ]},
+    {id:4,from:'Amina Rousseau',av:'AR',avColor:'#F4A629',preview:'Confirmé pour demain 14h !',time:'Lun.',unread:false,msgs:[
+      {dir:'out',text:'Bonjour Amina, proposition pour un entretien demain 14h ?',time:'Lun.'},
+      {dir:'in',text:'Confirmé pour demain 14h !',time:'Lun.'}
+    ]}
+  ]
+};
+
+const PROPOSALS = [
+  {id:1,company:'NeuralVentures',logo:'NV',logoColor:'#8B6BFF',role:'Lead Product Designer',salary:'75-90K',remote:'Full remote',date:'Il y a 2h',message:'Nous développons une plateforme d\'analyse IA pour les hôpitaux. Votre expérience Figma + système de design correspond parfaitement. Poste en full remote, équipe de 3 designers. Budget 82K. Intéressée ?',match:94},
+  {id:2,company:'TechVision',logo:'TV',logoColor:'#00F0C8',role:'Senior UX Designer',salary:'68-78K',remote:'Hybride (Paris)',date:'Il y a 5h',message:'Startup fintech Series B cherche un UX expérimenté pour refonte complète de l\'application mobile. Stack Figma, design tokens, travail avec 2 PM. 3j télétravail/semaine.',match:88},
+  {id:3,company:'CloudScale',logo:'CS',logoColor:'#F4A629',role:'Head of Design',salary:'90-110K',remote:'Remote-first',date:'Hier',message:'Nous recrutons un Head of Design pour prendre la tête d\'une équipe de 5. Mission : construire le design system de zéro, définir la culture design de la boîte. Post-A.',match:76},
+];
+
+const ADMIN_USERS = [
+  {id:1,name:'Sofia Leclerc',email:'sofia.l@email.com',role:'candidate',status:'active',plan:'Pro',created:'12 jan.',lastLogin:'Aujourd\'hui',score:88},
+  {id:2,name:'Karim Mourad',email:'k.mourad@email.com',role:'candidate',status:'active',plan:'Free',created:'08 jan.',lastLogin:'Hier',score:95},
+  {id:3,name:'TechVision RH',email:'rh@techvision.io',role:'recruiter',status:'active',plan:'Studio',created:'05 jan.',lastLogin:'Aujourd\'hui',score:null},
+  {id:4,name:'Amina Rousseau',email:'amina.r@email.com',role:'candidate',status:'active',plan:'Pro',created:'15 jan.',lastLogin:'Il y a 2j',score:82},
+  {id:5,name:'StartupScale',email:'talent@startupscale.fr',role:'recruiter',status:'pending',plan:'—',created:'20 jan.',lastLogin:'Jamais',score:null},
+  {id:6,name:'Mehdi Karray',email:'m.karray@email.com',role:'candidate',status:'suspended',plan:'Free',created:'03 jan.',lastLogin:'Il y a 8j',score:79},
+  {id:7,name:'NeuralVentures',email:'hr@neuralventures.ai',role:'recruiter',status:'active',plan:'Enterprise',created:'01 jan.',lastLogin:'Aujourd\'hui',score:null},
+  {id:8,name:'Léa Bernard',email:'lea.b@email.com',role:'candidate',status:'active',plan:'Free',created:'18 jan.',lastLogin:'Hier',score:87},
+];
+
+const MODERATION = [
+  {id:1,type:'content',severity:'high',user:'Mehdi Karray',desc:'Contenu vidéo signalé (propos inappropriés)',reports:3,date:'Il y a 1h'},
+  {id:2,type:'spam',severity:'medium',user:'StartupScale',desc:'Envoi de 12 messages non sollicités en 1h',reports:5,date:'Il y a 2h'},
+  {id:3,type:'identity',severity:'low',user:'Unknown User',desc:'Tentative de création multi-comptes même IP',reports:1,date:'Il y a 3h'},
+  {id:4,type:'payment',severity:'medium',user:'CloudTech RH',desc:'3 paiements échoués, accès non révoqué',reports:0,date:'Il y a 4h'},
+  {id:5,type:'content',severity:'low',user:'Théo Nguyen',desc:'Photo de profil non appropriée signalée',reports:2,date:'Hier'},
+  {id:6,type:'spam',severity:'high',user:'FakeCorp',desc:'Email entreprise inexistant, SIRET invalide',reports:1,date:'Hier'},
+  {id:7,type:'identity',severity:'medium',user:'Inconnu',desc:'Faux CV — diplômes invérifiables détectés par IA',reports:2,date:'Il y a 2j'},
+];
+
+// ════════════════════════════════════════
+// ROUTER
+// ════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function logout() {
+  STATE.user = null;
+  renderAuth('login');
+  showScreen('auth');
+  notify('Déconnexion réussie', 'info');
+}
+
+function notify(msg, type='success') {
+  const notif = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  el.textContent = msg;
+  notif.appendChild(el);
+  setTimeout(() => { el.style.animation = 'fadeOut .3s ease forwards'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function openModal(title, body, footer='') {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-footer').innerHTML = footer || '<button class="btn btn-ghost" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function renderAuth(mode='login', role='candidate') {
+  const box = document.getElementById('auth-box');
+  if (mode === 'login') {
+    box.innerHTML = `
+      <div class="auth-logo">CAND<span>ID</span></div>
+      <div class="auth-subtitle">La candidature réinventée</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active">Se connecter</button>
+        <button class="auth-tab" onclick="renderAuth('register')">Créer un compte</button>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="a-email" placeholder="votre@email.com" value="sofia@email.com"></div>
+      <div class="field"><label>Mot de passe</label><input type="password" id="a-pass" placeholder="••••••••" value="••••••••"></div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary btn-full" onclick="login('candidate')">Espace Candidat</button>
+        <button class="btn btn-amber btn-full" onclick="login('recruiter')">Espace Recruteur</button>
+      </div>
+      <div class="row-flex" style="justify-content:center;margin-top:10px;gap:8px">
+        <button class="btn btn-ghost" onclick="login('admin')" style="font-size:11px;padding:6px 12px">🛡 Admin CANDID</button>
+      </div>
+      <div class="auth-switch">Pas de compte ? <a onclick="renderAuth('register')">S'inscrire gratuitement</a></div>`;
+  } else {
+    box.innerHTML = `
+      <div class="auth-logo">CAND<span>ID</span></div>
+      <div class="auth-subtitle">Rejoindre CANDID</div>
+      <div class="auth-tabs">
+        <button class="auth-tab" onclick="renderAuth('login')">Se connecter</button>
+        <button class="auth-tab active">Créer un compte</button>
+      </div>
+      <div class="role-select" id="role-select">
+        <div class="role-btn ${role==='candidate'?'active':''}" onclick="selectRole('candidate',this)">
+          <div class="role-icon">🙋</div><div class="role-name">Je suis candidat</div><div class="role-desc">Gratuit pour toujours</div>
+        </div>
+        <div class="role-btn ${role==='recruiter'?'active':''}" onclick="selectRole('recruiter',this)">
+          <div class="role-icon">🏢</div><div class="role-name">Je recrute</div><div class="role-desc">14 jours offerts</div>
+        </div>
+      </div>
+      <div id="register-fields"></div>
+      <div class="auth-switch">Déjà membre ? <a onclick="renderAuth('login')">Se connecter</a></div>`;
+    selectRole(role);
+  }
+}
+
+let _selectedRole = 'candidate';
+function selectRole(role, el) {
+  _selectedRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const f = document.getElementById('register-fields');
+  if (!f) return;
+  if (role === 'candidate') {
+    f.innerHTML = `
+      <div class="grid2">
+        <div class="field"><label>Prénom</label><input type="text" placeholder="Sofia"></div>
+        <div class="field"><label>Nom</label><input type="text" placeholder="Leclerc"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" placeholder="votre@email.com"></div>
+      <div class="field"><label>Poste / Métier</label><input type="text" placeholder="UX Designer, Développeur..."></div>
+      <div class="field"><label>Mot de passe</label><input type="password" placeholder="Minimum 8 caractères"></div>
+      <div class="warn-banner" style="font-size:12px;margin-bottom:14px">📋 J'ai 18 ans ou plus et j'accepte les <a href="#" style="color:var(--amber)">CGU</a> et la <a href="#" style="color:var(--amber)">politique de confidentialité</a></div>
+      <button class="btn btn-primary btn-full" onclick="login('candidate')">Créer mon profil gratuit</button>`;
+  } else {
+    f.innerHTML = `
+      <div class="grid2">
+        <div class="field"><label>Prénom</label><input type="text" placeholder="Jean"></div>
+        <div class="field"><label>Nom</label><input type="text" placeholder="Dupont"></div>
+      </div>
+      <div class="field"><label>Email professionnel</label><input type="email" placeholder="jean@entreprise.com"></div>
+      <div class="field"><label>Entreprise</label><input type="text" placeholder="TechCorp SAS"></div>
+      <div class="field"><label>SIRET</label><input type="text" placeholder="12345678901234" maxlength="14"><div style="font-size:11px;color:var(--muted);margin-top:4px">✓ Vérifié automatiquement via API INSEE</div></div>
+      <div class="field"><label>Mot de passe</label><input type="password" placeholder="Minimum 8 caractères"></div>
+      <div class="success-banner" style="font-size:12px;margin-bottom:14px">🛡 Votre compte sera activé après validation (≤ 24h). Une CB sera demandée pour accéder aux profils.</div>
+      <button class="btn btn-amber btn-full" onclick="login('recruiter')">Créer mon espace recruteur</button>`;
+  }
+}
+
+function login(role) {
+  if (role === 'candidate') {
+    STATE.user = {role:'candidate', name:'Sofia Leclerc', initials:'SL', plan:'Pro'};
+    document.getElementById('cand-name').textContent = 'Sofia Leclerc';
+    document.getElementById('cand-av').textContent = 'SL';
+    showScreen('candidate');
+    candPage('home');
+    notify('Bienvenue Sofia ! 👋', 'success');
+  } else if (role === 'recruiter') {
+    STATE.user = {role:'recruiter', name:'Marc Dubois', company:'TechVision', initials:'MD', plan:'Studio'};
+    document.getElementById('rec-name').textContent = 'Marc Dubois';
+    document.getElementById('rec-av').textContent = 'MD';
+    document.getElementById('rec-company').textContent = 'TechVision';
+    showScreen('recruiter');
+    recPage('home');
+    notify('Bienvenue Marc ! 🎯', 'success');
+  } else {
+    STATE.user = {role:'admin', name:'Admin'};
+    showScreen('admin');
+    adminPage('overview');
+    notify('Accès admin activé 🛡', 'info');
+  }
+}
+
+// ════════════════════════════════════════
+// CANDIDATE PAGES
+// ════════════════════════════════════════
+function candPage(page) {
+  document.querySelectorAll('#sidebar-candidate .nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === page);
+  });
+  const c = document.getElementById('cand-content');
+  STATE.currentPage = page;
+
+  if (page === 'home') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Bonjour, Sofia ✦</h1><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="candPage('formats')">+ Ajouter un format</button></div></div>
+        <div class="page-sub">Votre profil est <strong class="text-cyan">actif et visible</strong> — 23 recruteurs l'ont consulté cette semaine</div>
+      </div>
+      <div class="page-body">
+        <div class="grid4 mb20">
+          <div class="stat-card"><div class="stat-num">247</div><div class="stat-label">Vues profil (total)</div><div class="stat-change up">↑ +34 cette semaine</div></div>
+          <div class="stat-card"><div class="stat-num text-amber">3</div><div class="stat-label">Nouvelles propositions</div><div class="stat-change up">↑ +2 vs. semaine dernière</div></div>
+          <div class="stat-card"><div class="stat-num text-violet">88</div><div class="stat-label">Score CANDID</div><div class="stat-change up">↑ +3 pts ce mois</div></div>
+          <div class="stat-card"><div class="stat-num text-cyan">92%</div><div class="stat-label">Complétion profil</div><div class="stat-change" style="color:var(--amber)">→ 1 format manquant</div></div>
+        </div>
+
+        <div class="grid2 mb20" style="align-items:start">
+          <div>
+            <div class="card mb16">
+              <div class="card-title"><span class="ct-label">📬 Dernières propositions</span><button class="btn btn-ghost" onclick="candPage('proposals')" style="font-size:11px;padding:5px 10px">Voir tout</button></div>
+              ${PROPOSALS.slice(0,2).map(p=>`
+              <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)">
+                <div class="avatar" style="width:38px;height:38px;background:${p.logoColor}22;color:${p.logoColor};font-size:13px;border:1px solid ${p.logoColor}33">${p.logo}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">${p.company}</div>
+                  <div style="font-size:12px;color:var(--muted)">${p.role} · ${p.salary}</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:4px">${p.date}</div>
+                </div>
+                <div style="text-align:right"><div class="bebas" style="font-size:20px;color:var(--cyan)">${p.match}%</div><div style="font-size:10px;color:var(--muted)">match</div></div>
+              </div>`).join('')}
+            </div>
+            <div class="card">
+              <div class="card-title">💬 Messages récents</div>
+              ${MESSAGES.candidate.slice(0,2).map(m=>`
+              <div onclick="candPage('messages')" style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px">
+                <div class="avatar" style="width:34px;height:34px;background:${m.avColor}22;color:${m.avColor};font-size:12px;border:1px solid ${m.avColor}33">${m.av}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600">${m.from}</div>
+                  <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.preview}</div>
+                </div>
+                ${m.unread?'<div style="width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-top:8px;flex-shrink:0"></div>':''}
+              </div>`).join('')}
+            </div>
+          </div>
+          <div>
+            <div class="card mb16">
+              <div class="card-title">⚡ Complétion du profil</div>
+              <div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px">Profil global</span><span class="text-cyan font-mono" style="font-size:13px">92%</span></div>
+                <div class="progress"><div class="progress-fill" style="width:92%;background:var(--cyan)"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                ${[['✅ Vidéo pitch 60s','100%','var(--cyan)'],['✅ Carte compétences IA','100%','var(--cyan)'],['✅ 3 Challenges validés','100%','var(--cyan)'],['✅ Portfolio 3D','100%','var(--cyan)'],['⏳ Audio note personnelle','0%','var(--dim)'],['✅ 2 Recommandations vidéo','100%','var(--cyan)']].map(([l,p,col])=>`
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:${p==='0%'?'var(--muted)':'var(--text)'}">${l}</span><span style="color:${col}">${p}</span></div>
+                  <div class="progress" style="height:3px"><div class="progress-fill" style="width:${p};background:${col}"></div></div>
+                </div>`).join('')}
+              </div>
+              <button class="btn btn-ghost btn-full mt16" onclick="candPage('formats')">Compléter mon profil →</button>
+            </div>
+            <div class="card">
+              <div class="card-title">👁 Qui m'a vu cette semaine</div>
+              <div class="chart-bar">
+                ${[{h:30,l:'L',v:'3'},{h:55,l:'M',v:'6'},{h:45,l:'M',v:'5'},{h:75,l:'J',v:'8'},{h:90,l:'V',v:'10'},{h:60,l:'S',v:'7'},{h:40,l:'D',v:'4'}].map(d=>`
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <div class="chart-bar-item" data-val="${d.v}" style="height:${d.h}%;width:100%;background:linear-gradient(to top,var(--cyan2),var(--violet));opacity:.7;border-radius:3px 3px 0 0"></div>
+                  <div style="font-size:10px;color:var(--muted)">${d.l}</div>
+                </div>`).join('')}
+              </div>
+              <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">43 vues cette semaine — +27% vs. semaine dernière</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'profile') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Mon Profil</h1><div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="openProfilePreview()">👁 Aperçu public</button><button class="btn btn-primary">Sauvegarder</button></div></div>
+        <div class="page-sub">Ce que voient les recruteurs sur votre fiche</div>
+      </div>
+      <div class="page-body">
+        <div class="grid2" style="align-items:start">
+          <div>
+            <div class="card mb14">
+              <div class="card-title">Informations de base</div>
+              <div class="field"><label>Prénom & Nom</label><input type="text" value="Sofia Leclerc" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+              <div class="field"><label>Titre du poste</label><input type="text" value="Lead UX Designer" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+              <div class="grid2">
+                <div class="field"><label>Ville</label><input type="text" value="Paris" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+                <div class="field"><label>Disponibilité</label><select style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"><option>Janvier 2025</option><option>Immédiat</option><option>+ 1 mois</option><option>+ 3 mois</option></select></div>
+              </div>
+              <div class="field"><label>Bio courte</label><textarea style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none;resize:vertical;min-height:80px">Lead UX Designer avec 8 ans d'expérience, spécialisée dans les interfaces fintech complexes. J'aime construire des design systems durables et collaborer avec les équipes produit dès la phase de discovery.</textarea></div>
+            </div>
+            <div class="card mb14">
+              <div class="card-title"><span class="ct-label">Compétences</span><button class="btn btn-ghost" onclick="notify('Compétence ajoutée !','success')" style="font-size:11px;padding:5px 10px">+ Ajouter</button></div>
+              <div class="pill-row mb12">
+                ${['Figma','Design System','Prototypage','User Research','Accessibility','Framer','Notion','FigJam'].map(s=>`<span class="tag tag-cyan" style="cursor:pointer" onclick="notify('Compétence retirée','info')">${s} ✕</span>`).join('')}
+              </div>
+              <div class="info-banner" style="font-size:12px">💡 Ajoutez les compétences prouvées par vos challenges pour booster votre score CANDID</div>
+            </div>
+          </div>
+          <div>
+            <div class="card mb14">
+              <div class="card-title">Préférences de poste</div>
+              <div class="field"><label>Salaire souhaité (brut annuel)</label>
+                <div style="display:flex;gap:8px">
+                  <input type="text" value="70 000" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none">
+                  <span style="align-self:center;color:var(--muted)">–</span>
+                  <input type="text" value="85 000" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none">
+                  <span style="align-self:center;color:var(--muted);font-size:12px">€/an</span>
+                </div>
+              </div>
+              <div class="field"><label>Mode de travail</label>
+                <div style="display:flex;gap:8px">
+                  ${['Full Remote','Hybride','Présentiel'].map((m,i)=>`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;padding:8px 12px;border:1px solid ${i<2?'var(--cyan)':'var(--border)'};border-radius:8px;background:${i<2?'rgba(0,240,200,.06)':'var(--bg3)'}"><input type="checkbox" ${i<2?'checked':''} style="accent-color:var(--cyan)">${m}</label>`).join('')}
+                </div>
+              </div>
+              <div class="field"><label>Secteurs souhaités</label>
+                <div class="pill-row">
+                  ${['Fintech ✓','SaaS B2B ✓','Healthtech ✓','E-commerce','Gaming'].map((s,i)=>`<span class="tag ${i<3?'tag-cyan':'tag-gray'}" style="cursor:pointer" onclick="this.className='tag '+(this.className.includes('cyan')?'tag-gray':'tag-cyan')">${s}</span>`).join('')}
+                </div>
+              </div>
+              <div class="field"><label>Entreprises bloquées</label>
+                <input type="text" placeholder="Entrez un nom d'entreprise à bloquer..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none">
+                <div style="font-size:11px;color:var(--muted);margin-top:4px">Ces entreprises ne pourront pas voir votre profil</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Visibilité du profil</div>
+              <div class="toggle-wrap">
+                <div class="toggle-info"><div class="ti-label">Profil public</div><div class="ti-desc">Visible par tous les recruteurs</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-wrap">
+                <div class="toggle-info"><div class="ti-label">Open to work (badge visible)</div><div class="ti-desc">Affiche que vous êtes disponible</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-wrap">
+                <div class="toggle-info"><div class="ti-label">Masquer à mon employeur actuel</div><div class="ti-desc">Protection supplémentaire</div></div>
+                <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-wrap">
+                <div class="toggle-info"><div class="ti-label">Accepter les propositions directes</div><div class="ti-desc">Les recruteurs peuvent vous contacter</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'formats') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Mes Formats</h1><div class="tag tag-cyan">Score CANDID : 88/100</div></div>
+        <div class="page-sub">Chaque format ajouté augmente votre visibilité de +12% en moyenne</div>
+      </div>
+      <div class="page-body">
+        <div class="success-banner mb20">✦ Votre profil est <strong>5× plus visible</strong> avec une vidéo pitch. Vous avez déjà 4 formats actifs sur 6 possibles.</div>
+        <div class="format-grid">
+          ${[
+            {icon:'🎥',title:'Pitch Vidéo 60s',desc:'Présentation personnelle authentique',status:'Actif',statusTag:'badge-active',hasContent:true,action:'Regarder ma vidéo',fn:'viewMyVideo'},
+            {icon:'🧠',title:'Carte Compétences IA',desc:'Constellation interactive de vos skills',status:'Actif',statusTag:'badge-active',hasContent:true,action:'Voir ma carte',fn:'viewSkillMap'},
+            {icon:'🎙️',title:'Audio Note 3min',desc:'3 minutes d\'audio spontané',status:'Manquant',statusTag:'badge-pending',hasContent:false,action:'Enregistrer maintenant',fn:'recordAudio'},
+            {icon:'⚡',title:'Challenges Validés',desc:'3 challenges complétés et certifiés',status:'3/5 défis',statusTag:'badge-verified',hasContent:true,action:'Passer un défi',fn:'doChallenge'},
+            {icon:'🌐',title:'Portfolio 3D',desc:'Galerie de projets immersive',status:'Actif',statusTag:'badge-active',hasContent:true,action:'Modifier le portfolio',fn:'editPortfolio'},
+            {icon:'🤝',title:'Recommandations Vidéo',desc:'2 recommandations de collègues',status:'2/5',statusTag:'badge-verified',hasContent:true,action:'Inviter quelqu\'un',fn:'inviteRecommendation'}
+          ].map(f=>`
+          <div class="format-card ${f.hasContent?'has-content':''}">
+            <span class="fc-status badge ${f.statusTag}">${f.status}</span>
+            <div class="fc-icon" style="background:rgba(0,240,200,.08);border:1px solid rgba(0,240,200,.15)">${f.icon}</div>
+            <div class="fc-title">${f.title}</div>
+            <div class="fc-desc">${f.desc}</div>
+            <button class="btn ${f.hasContent?'btn-ghost':'btn-primary'} fc-add" onclick="${f.fn}()">${f.action}</button>
+          </div>`).join('')}
+        </div>
+
+        <div class="card mt16">
+          <div class="card-title">🔮 Formats Futur (Bientôt disponibles)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            ${[
+              {icon:'🥽',title:'Entretien Réalité Mixte',desc:'Entretien dans un environnement XR simulé',date:'Q3 2025'},
+              {icon:'🤖',title:'Avatar IA Représentant',desc:'Un avatar entraîné sur votre personnalité vous représente',date:'Q4 2025'},
+              {icon:'📡',title:'Empreinte de Contribution',desc:'Analyse de vos commits GitHub, Figma, Notion',date:'Q1 2026'},
+              {icon:'🔮',title:'Projection Future 3 ans',desc:'Montrez qui vous serez, pas seulement qui vous êtes',date:'Q2 2026'}
+            ].map(f=>`
+            <div style="display:flex;gap:12px;padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+              <div style="font-size:22px">${f.icon}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;margin-bottom:3px">${f.title}</div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${f.desc}</div>
+                <span class="tag tag-violet" style="font-size:10px">${f.date}</span>
+              </div>
+              <button class="btn btn-ghost" onclick="notify('Notification activée pour ${f.title}','info')" style="font-size:11px;padding:5px 10px;align-self:flex-start">🔔 Notifier</button>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'analytics') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Analytics</h1><div class="tag tag-amber">Plan Pro</div></div>
+        <div class="page-sub">Données des 30 derniers jours</div>
+      </div>
+      <div class="page-body">
+        <div class="grid4 mb20">
+          <div class="stat-card"><div class="stat-num">247</div><div class="stat-label">Vues profil</div><div class="stat-change up">↑ +34%</div></div>
+          <div class="stat-card"><div class="stat-num text-cyan">43</div><div class="stat-label">Vues uniques</div><div class="stat-change up">↑ +12%</div></div>
+          <div class="stat-card"><div class="stat-num text-amber">18</div><div class="stat-label">Vidéo regardée</div><div class="stat-change up">↑ +67%</div></div>
+          <div class="stat-card"><div class="stat-num text-violet">3</div><div class="stat-label">Propositions reçues</div><div class="stat-change up">↑ +1</div></div>
+        </div>
+        <div class="grid2 mb20">
+          <div class="card">
+            <div class="card-title">📊 Vues par jour (30 derniers jours)</div>
+            <div class="chart-bar" style="height:100px">
+              ${[4,6,3,8,5,9,7,12,10,15,8,11,14,9,13,7,10,16,12,18,14,20,15,22,18,24,19,25,21,23].map((v,i)=>`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+                <div data-val="${v}" style="height:${v/25*100}%;width:100%;background:linear-gradient(to top,var(--cyan2),var(--violet));opacity:.6;border-radius:2px 2px 0 0;min-height:3px;cursor:default" title="${v} vues"></div>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">🏢 Top secteurs qui vous consultent</div>
+            ${[['Fintech',42,'var(--cyan)'],['SaaS B2B',28,'var(--violet)'],['Healthtech',18,'var(--amber)'],['E-commerce',8,'var(--rose)'],['Autres',4,'var(--muted)']].map(([s,p,c])=>`
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${s}</span><span style="color:${c};font-family:DM Mono,monospace">${p}%</span></div>
+              <div class="progress"><div class="progress-fill" style="width:${p}%;background:${c}"></div></div>
+            </div>`).join('')}
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">📍 Villes des recruteurs</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${[['Paris','🇫🇷',58],['Londres','🇬🇧',15],['Berlin','🇩🇪',10],['New York','🇺🇸',9],['Amsterdam','🇳🇱',8]].map(([v,f,p])=>`
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:16px">${f}</span>
+                <span style="flex:1;font-size:13px">${v}</span>
+                <div class="progress" style="width:80px"><div class="progress-fill" style="width:${p}%;background:var(--cyan2)"></div></div>
+                <span style="font-size:12px;color:var(--muted);font-family:DM Mono,monospace;min-width:30px;text-align:right">${p}%</span>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">🎯 Performance par format</div>
+            ${[['Pitch Vidéo','🎥',18,'vues complètes','var(--cyan)'],['Portfolio 3D','🌐',12,'visites','var(--violet)'],['Challenges','⚡',8,'consultations','var(--amber)'],['Carte Skills','🧠',6,'interactions','var(--rose)']].map(([l,i,v,u,c])=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:18px">${i}</span>
+              <span style="flex:1;font-size:13px">${l}</span>
+              <span style="font-family:DM Mono,monospace;font-size:14px;font-weight:500;color:${c}">${v}</span>
+              <span style="font-size:11px;color:var(--muted)">${u}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'messages') {
+    renderMessages(c, 'candidate');
+  } else if (page === 'proposals') {
+    renderProposals(c);
+  } else if (page === 'subscription') {
+    renderCandidateSubscription(c);
+  } else if (page === 'settings') {
+    renderCandidateSettings(c);
+  }
+}
+
+function renderMessages(c, userType) {
+  const msgs = MESSAGES[userType];
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Messages</h1></div>
+      <div class="page-sub">${msgs.filter(m=>m.unread).length} non lu(s)</div>
+    </div>
+    <div class="page-body" style="padding-bottom:0;flex:1;overflow:hidden;display:flex;flex-direction:column">
+      <div class="msg-layout" style="flex:1">
+        <div class="msg-list" id="msg-list">
+          ${msgs.map((m,i)=>`
+          <div class="msg-item ${i===0?'active':''}" onclick="selectMsg(${m.id},'${userType}')" id="msgitem-${m.id}">
+            <div class="avatar" style="width:38px;height:38px;background:${m.avColor}22;color:${m.avColor};font-size:13px;border:1px solid ${m.avColor}33">${m.av}</div>
+            <div style="flex:1;min-width:0">
+              <div class="row-flex gap8" style="margin-bottom:2px">
+                <div class="mi-name">${m.from}</div>
+                <div class="mi-time">${m.time}</div>
+              </div>
+              <div class="mi-preview">${m.preview}</div>
+            </div>
+            ${m.unread?`<div class="msg-unread"></div>`:''}
+          </div>`).join('')}
+        </div>
+        <div class="msg-chat" id="msg-chat">
+          ${renderChatView(msgs[0], userType)}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderChatView(msg, userType) {
+  return `
+    <div class="msg-chat-header">
+      <div class="avatar" style="width:36px;height:36px;background:${msg.avColor}22;color:${msg.avColor};font-size:12px;border:1px solid ${msg.avColor}33">${msg.av}</div>
+      <div><div style="font-size:14px;font-weight:600">${msg.from}</div></div>
+      ${userType==='recruiter'?`<button class="btn btn-ghost" onclick="viewTalentProfile('${msg.av}')" style="margin-left:auto;font-size:12px;padding:6px 12px">Voir le profil →</button>`:''}
+    </div>
+    <div class="msg-chat-body">
+      ${msg.msgs.map(m=>`
+      <div>
+        <div class="msg-bubble ${m.dir}">${m.text}</div>
+        <div class="msg-bubble-time" style="font-size:10px;color:var(--muted);margin-top:3px;${m.dir==='out'?'text-align:right':''}">${m.time}</div>
+      </div>`).join('')}
+    </div>
+    <div class="msg-input-row">
+      <textarea class="msg-input" id="msg-input" placeholder="Écrire un message..." rows="1"></textarea>
+      <button class="btn btn-primary" onclick="sendMsg('${msg.from}')">Envoyer</button>
+    </div>`;
+}
+
+function selectMsg(id, userType) {
+  const msgs = MESSAGES[userType];
+  const msg = msgs.find(m=>m.id===id);
+  document.querySelectorAll('.msg-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('msgitem-'+id).classList.add('active');
+  document.getElementById('msg-chat').innerHTML = renderChatView(msg, userType);
+}
+
+function sendMsg(to) {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const body = document.querySelector('.msg-chat-body');
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="msg-bubble out">${text}</div><div class="msg-bubble-time" style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right">À l'instant</div>`;
+  body.appendChild(div);
+  input.value = '';
+  body.scrollTop = body.scrollHeight;
+  notify('Message envoyé à ' + to, 'success');
+}
+
+function renderProposals(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Propositions</h1><span class="tag tag-amber">${PROPOSALS.length} actives</span></div>
+      <div class="page-sub">Des recruteurs ont remarqué votre profil et vous font une offre</div>
+    </div>
+    <div class="page-body">
+      ${PROPOSALS.map(p=>`
+      <div class="card mb14">
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <div class="avatar" style="width:48px;height:48px;background:${p.logoColor}22;color:${p.logoColor};font-size:16px;border:1px solid ${p.logoColor}33">${p.logo}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+              <div style="font-size:15px;font-weight:700">${p.company}</div>
+              <span class="tag tag-cyan" style="font-size:11px">${p.match}% match</span>
+              <span style="font-size:11px;color:var(--muted);margin-left:auto">${p.date}</span>
+            </div>
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">${p.role}</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+              <span class="tag tag-gray">${p.salary}</span>
+              <span class="tag tag-gray">${p.remote}</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px">${p.message}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="acceptProposal(${p.id},'${p.company}')">✓ Accepter et ouvrir la messagerie</button>
+              <button class="btn btn-ghost" onclick="notify('Proposition de ${p.company} déclinée','info')">Décliner</button>
+              <button class="btn btn-ghost" onclick="notify('Mis en attente','info')">⏸ Plus tard</button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function acceptProposal(id, company) {
+  notify('Proposition acceptée ! Messagerie ouverte avec ' + company, 'success');
+  setTimeout(()=>candPage('messages'), 800);
+}
+
+function renderCandidateSubscription(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Abonnement</h1></div>
+      <div class="page-sub">Plan actuel : <strong class="text-cyan">Pro Talent</strong> — renouvellement le 15 février 2025</div>
+    </div>
+    <div class="page-body">
+      <div class="success-banner mb20">✅ Vous êtes sur le plan <strong>Pro Talent</strong>. Accès à toutes les fonctionnalités avancées.</div>
+      <div class="grid2 mb20" style="align-items:start">
+        <div class="plan-card current">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+            <div><div class="plan-name">PRO TALENT</div><div style="font-size:12px;color:var(--muted)">Plan actuel</div></div>
+            <span class="tag tag-cyan">Actif</span>
+          </div>
+          <div style="margin-bottom:16px"><span class="plan-price" style="color:var(--cyan)">9€</span><span class="plan-period">/mois · sans engagement</span></div>
+          ${[['Profil public complet','✓'],['Vidéos illimitées','✓'],['Qui a vu mon profil','✓'],['Portfolio 3D immersif','✓'],['Challenges illimités','✓'],['5 recommandations vidéo','✓'],['Avatar IA représentant (beta)','✓']].map(([f,c])=>`
+          <div class="plan-feature"><span class="pf-check" style="color:var(--cyan)">${c}</span>${f}</div>`).join('')}
+          <button class="btn btn-danger btn-full mt16" onclick="notify('Résiliation initiée — vous gardez l\'accès jusqu\'au 15/02','info')">Résilier le plan Pro</button>
+        </div>
+        <div>
+          <div class="plan-card mb14">
+            <div class="plan-name" style="font-size:20px;color:var(--muted)">ESSENTIEL</div>
+            <div style="margin-bottom:12px"><span class="plan-price" style="font-size:24px">0€</span><span class="plan-period">/toujours gratuit</span></div>
+            ${[['Profil public complet','✓'],['1 vidéo pitch','✓'],['Carte compétences IA','✓'],['3 challenges validés','✓'],['Analytics profil','✗'],['Portfolio 3D','✗']].map(([f,c])=>`
+            <div class="plan-feature ${c==='✗'?'inactive':''}"><span class="pf-check" style="color:${c==='✓'?'#4ade80':'var(--muted)'}">${c}</span>${f}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-title">💳 Facturation</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${[['Jan. 2025','9,00 €','✓'],['Déc. 2024','9,00 €','✓'],['Nov. 2024','9,00 €','✓']].map(([d,m,s])=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+                <span>${d}</span><span class="text-muted">${m}</span>
+                <button class="btn btn-ghost" onclick="notify('Facture téléchargée','success')" style="font-size:11px;padding:4px 10px">PDF</button>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderCandidateSettings(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Paramètres</h1></div>
+      <div class="page-sub">Compte, sécurité, confidentialité et RGPD</div>
+    </div>
+    <div class="page-body">
+      <div class="grid2" style="align-items:start">
+        <div>
+          <div class="card mb14">
+            <div class="card-title">🔐 Sécurité</div>
+            <div class="field"><label>Email</label><input type="email" value="sofia.leclerc@email.com" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+            <div class="field"><label>Nouveau mot de passe</label><input type="password" placeholder="Laisser vide pour ne pas changer" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+            <div class="toggle-wrap">
+              <div class="toggle-info"><div class="ti-label">Authentification à 2 facteurs</div><div class="ti-desc">Via application TOTP</div></div>
+              <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+            <button class="btn btn-ghost btn-full mt12" onclick="notify('Paramètres sauvegardés','success')">Sauvegarder les modifications</button>
+          </div>
+          <div class="card">
+            <div class="card-title">🔔 Notifications</div>
+            ${[['Nouvelles propositions reçues',true],['Messages non lus',true],['Profil consulté par un recruteur',true],['Newsletter CANDID',false],['Alertes de sécurité',true]].map(([l,v])=>`
+            <div class="toggle-wrap">
+              <div class="toggle-info"><div class="ti-label">${l}</div></div>
+              <label class="toggle"><input type="checkbox" ${v?'checked':''}><span class="toggle-slider"></span></label>
+            </div>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="card mb14">
+            <div class="card-title">🇪🇺 RGPD — Vos droits</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button class="btn btn-ghost btn-full" onclick="notify('Export en cours de génération (JSON)','info')">📦 Exporter mes données (JSON)</button>
+              <button class="btn btn-ghost btn-full" onclick="notify('Rapport de traitement envoyé par email','info')">📋 Voir le registre des traitements</button>
+              <button class="btn btn-ghost btn-full" onclick="notify('Vous pouvez rectifier depuis l\'onglet Profil','info')">✏ Rectifier mes informations</button>
+              <div class="divider"></div>
+              <button class="btn btn-danger btn-full" onclick="openDeleteAccountModal()">🗑 Supprimer mon compte</button>
+              <div style="font-size:11px;color:var(--muted);text-align:center">Vos données seront effacées définitivement sous 30 jours</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">🌐 Connexions externes</div>
+            ${[['LinkedIn','Connecté ✓','var(--cyan)'],['Google','Connecté ✓','var(--cyan)'],['GitHub','Non connecté','var(--muted)'],['Figma','Non connecté','var(--muted)']].map(([s,st,c])=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px">${s}</span>
+              <span style="font-size:12px;color:${c}">${st}</span>
+              <button class="btn btn-ghost" onclick="notify('${s} ${st.includes('Connecté')?'déconnecté':'connecté'}','info')" style="font-size:11px;padding:4px 10px">${st.includes('Connecté')?'Retirer':'Connecter'}</button>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+// ════════════════════════════════════════
+// RECRUITER PAGES
+// ════════════════════════════════════════
+function recPage(page) {
+  document.querySelectorAll('#sidebar-recruiter .nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === page);
+  });
+  const c = document.getElementById('rec-content');
+  STATE.currentPage = page;
+
+  if (page === 'home') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Tableau de bord</h1><button class="btn btn-amber" onclick="recPage('search')">🔍 Chercher des talents</button></div>
+        <div class="page-sub">TechVision · Plan Studio · 18/25 contacts utilisés ce mois</div>
+      </div>
+      <div class="page-body">
+        <div class="warn-banner mb16">⚡ 7 contacts restants ce mois. <a onclick="recPage('billing')" style="color:var(--amber);cursor:pointer">Passer à Enterprise pour des contacts illimités →</a></div>
+        <div class="grid4 mb20">
+          <div class="stat-card"><div class="stat-num">18</div><div class="stat-label">Contacts envoyés</div><div class="stat-change up">↑ 72% taux de réponse</div></div>
+          <div class="stat-card"><div class="stat-num text-cyan">5</div><div class="stat-label">Dans le pipeline</div><div class="stat-change up">↑ +2 vs. semaine dernière</div></div>
+          <div class="stat-card"><div class="stat-num text-amber">4</div><div class="stat-label">Messages non lus</div></div>
+          <div class="stat-card"><div class="stat-num text-violet">247</div><div class="stat-label">Profils explorés</div></div>
+        </div>
+        <div class="grid2 mb20" style="align-items:start">
+          <div class="card">
+            <div class="card-title"><span class="ct-label">📋 Pipeline — vue rapide</span><button class="btn btn-ghost" onclick="recPage('pipeline')" style="font-size:11px;padding:5px 10px">Voir tout</button></div>
+            ${Object.entries(STATE.pipeline).filter(([k,v])=>v.length>0).map(([stage,cards])=>`
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${{contacted:'Contacté',replied:'A répondu',interview:'Entretien',offer:'Offre',hired:'Embauché'}[stage]} (${cards.length})</div>
+              ${cards.map(card=>`
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(30,42,56,.4)">
+                <div class="avatar" style="width:32px;height:32px;background:${card.color};color:${card.txt};font-size:12px">${card.av}</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">${card.name}</div><div style="font-size:11px;color:var(--muted)">${card.role}</div></div>
+                <div class="bebas text-cyan" style="font-size:18px">${card.score}</div>
+              </div>`).join('')}
+            </div>`).join('')}
+          </div>
+          <div>
+            <div class="card mb14">
+              <div class="card-title">💬 Derniers messages</div>
+              ${MESSAGES.recruiter.slice(0,3).map(m=>`
+              <div onclick="recPage('messages')" style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,42,56,.4);cursor:pointer">
+                <div class="avatar" style="width:34px;height:34px;background:${m.avColor}22;color:${m.avColor};font-size:12px;border:1px solid ${m.avColor}33">${m.av}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600">${m.from}</div>
+                  <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.preview}</div>
+                </div>
+                ${m.unread?'<div style="width:7px;height:7px;border-radius:50%;background:var(--cyan);flex-shrink:0;margin-top:6px"></div>':''}
+              </div>`).join('')}
+              <button class="btn btn-ghost btn-full mt12" onclick="recPage('messages')">Voir tous les messages</button>
+            </div>
+            <div class="card">
+              <div class="card-title">🔖 Profils sauvegardés récemment</div>
+              ${TALENTS.filter(t=>STATE.savedProfiles.includes(t.initials)).slice(0,3).map(t=>`
+              <div onclick="viewTalentProfile('${t.initials}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(30,42,56,.4);cursor:pointer">
+                <div class="avatar" style="width:34px;height:34px;background:${t.avColor};color:${t.avTxt};font-size:12px">${t.initials}</div>
+                <div style="flex:1"><div style="font-size:13px;font-weight:500">${t.name}</div><div style="font-size:11px;color:var(--muted)">${t.title}</div></div>
+                <div class="bebas" style="font-size:18px;color:var(--cyan)">${t.score}</div>
+              </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'search') {
+    renderSearch(c);
+  } else if (page === 'saved') {
+    renderSaved(c);
+  } else if (page === 'pipeline') {
+    renderPipeline(c);
+  } else if (page === 'messages') {
+    renderMessages(c, 'recruiter');
+  } else if (page === 'billing') {
+    renderRecruiterBilling(c);
+  } else if (page === 'settings') {
+    renderRecruiterSettings(c);
+  }
+}
+
+let searchFilters = {remote:true, video:true, minScore:60, avail:'all', sector:'all'};
+let searchQuery = 'Senior ML Engineer · LLM · Remote';
+
+function renderSearch(c) {
+  const filtered = TALENTS.filter(t => {
+    if (searchFilters.remote && !t.remote) return false;
+    if (searchFilters.video && !t.formats.includes('video')) return false;
+    if (t.score < searchFilters.minScore) return false;
+    return true;
+  });
+
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Chercher des talents</h1><span style="font-size:13px;color:var(--muted)">${filtered.length} résultats</span></div>
+    </div>
+    <div class="page-body" style="overflow:visible">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start">
+
+        <!-- FILTRES -->
+        <div class="card" style="position:sticky;top:0">
+          <div class="card-title">⚙ Filtres</div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px">Format de présentation</div>
+            ${[['video','🎥 Vidéo pitch'],['audio','🎙 Audio note'],['challenges','⚡ Challenges'],['portfolio','🌐 Portfolio 3D']].map(([k,l])=>`
+            <div onclick="toggleSearchFilter('fmt_${k}')" id="filt-fmt_${k}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid ${k==='video'?'rgba(0,240,200,.2)':'var(--border)'};background:${k==='video'?'rgba(0,240,200,.04)':'transparent'};margin-bottom:4px;transition:all .15s">
+              <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${k==='video'?'var(--cyan)':'var(--border)'};background:${k==='video'?'var(--cyan)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bg);flex-shrink:0">${k==='video'?'✓':''}</div>
+              <span style="font-size:13px;flex:1;color:${k==='video'?'var(--text)':'var(--muted)'}">${l}</span>
+            </div>`).join('')}
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px">Mode de travail</div>
+            ${[['remote','Full remote',true],['hybrid','Hybride',false],['onsite','Présentiel',false]].map(([k,l,a])=>`
+            <div onclick="notify('Filtre ${l} ${a?'retiré':'ajouté'}','info')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid ${a?'rgba(0,240,200,.2)':'var(--border)'};background:${a?'rgba(0,240,200,.04)':'transparent'};margin-bottom:4px">
+              <div style="width:14px;height:14px;border-radius:3px;border:1.5px solid ${a?'var(--cyan)':'var(--border)'};background:${a?'var(--cyan)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--bg)">${a?'✓':''}</div>
+              <span style="font-size:13px;flex:1;color:${a?'var(--text)':'var(--muted)'}">${l}</span>
+            </div>`).join('')}
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px">Score CANDID minimum</div>
+            <input type="range" min="0" max="100" value="${searchFilters.minScore}" oninput="searchFilters.minScore=+this.value;document.getElementById('score-val').textContent=this.value;renderSearch(document.getElementById('rec-content'))" style="width:100%;accent-color:var(--cyan)">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>0</span><span>Min: <span id="score-val">${searchFilters.minScore}</span></span><span>100</span></div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px">Disponibilité</div>
+            ${[['all','Toutes','var(--amber)'],['now','Immédiat','var(--muted)'],['month','– 1 mois','var(--muted)']].map(([k,l,c])=>`
+            <div onclick="notify('Filtre disponibilité: ${l}','info')" style="padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid ${k==='all'?'var(--amber)':'var(--border)'};margin-bottom:4px;font-size:13px;color:${k==='all'?'var(--amber)':'var(--muted)'}">${l}</div>`).join('')}
+          </div>
+          <button class="btn btn-ghost btn-full" onclick="notify('Filtres réinitialisés','info')">Réinitialiser</button>
+        </div>
+
+        <!-- RESULTS -->
+        <div>
+          <div class="search-bar mb12">
+            <span style="color:var(--muted);font-size:16px">🔍</span>
+            <input type="text" value="${searchQuery}" placeholder="Ex: Lead UX Designer · Fintech · Remote..." oninput="searchQuery=this.value" style="flex:1;background:none;border:none;outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:14px">
+            <button class="btn btn-primary" onclick="renderSearch(document.getElementById('rec-content'))" style="padding:7px 18px;font-size:13px">Rechercher</button>
+          </div>
+          <div class="filter-row mb16">
+            <span class="filter-chip active">Full Remote ×</span>
+            <span class="filter-chip active">Vidéo pitch ✓ ×</span>
+            <span class="filter-chip active">Score ≥ ${searchFilters.minScore} ×</span>
+            <span class="filter-chip" style="color:var(--amber);border-color:rgba(244,166,41,.3)" onclick="notify('Filtre IA activé — analyse sémantique en cours','info')">✦ Filtre IA</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <span style="font-size:13px;color:var(--muted)"><strong class="text-text">${filtered.length}</strong> talents correspondent</span>
+            <select style="background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+              <option>Meilleur match</option><option>Score CANDID</option><option>Disponibilité</option><option>Vues profil</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${filtered.map(t=>`
+            <div onclick="viewTalentProfile('${t.initials}')" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;cursor:pointer;transition:all .2s" onmouseenter="this.style.borderColor='rgba(0,240,200,.25)';this.style.transform='translateY(-1px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform=''">
+              <div class="avatar" style="width:48px;height:48px;font-size:16px;background:${t.avColor};color:${t.avTxt}">${t.initials}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+                  <span style="font-size:14px;font-weight:700">${t.name}</span>
+                  ${t.formats.includes('video')?'<span style="background:rgba(255,77,106,.1);color:var(--rose);font-size:10px;padding:2px 7px;border-radius:100px;font-weight:600">● Vidéo</span>':''}
+                </div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${t.title} · ${t.location} · ${t.avail}</div>
+                <div style="display:flex;gap:5px;flex-wrap:wrap">
+                  ${t.skills.map(s=>`<span class="tag tag-cyan">${s}</span>`).join('')}
+                  <span class="tag tag-gray">${t.exp}</span>
+                  <span class="tag tag-amber">${t.salary}</span>
+                </div>
+              </div>
+              <div style="text-align:center;flex-shrink:0">
+                <div class="bebas" style="font-size:28px;color:var(--cyan);line-height:1">${t.match}%</div>
+                <div style="font-size:10px;color:var(--muted)">match</div>
+                <div style="display:flex;gap:4px;margin-top:8px;justify-content:center">
+                  <button onclick="event.stopPropagation();saveProfile('${t.initials}')" style="width:28px;height:28px;border-radius:7px;background:var(--surface);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px" title="Sauvegarder">${STATE.savedProfiles.includes(t.initials)?'🔖':'☆'}</button>
+                  <button onclick="event.stopPropagation();contactTalent('${t.initials}','${t.name}')" style="width:28px;height:28px;border-radius:7px;background:rgba(0,240,200,.08);border:1px solid rgba(0,240,200,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px" title="Contacter">✉</button>
+                </div>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderSaved(c) {
+  const saved = TALENTS.filter(t => STATE.savedProfiles.includes(t.initials));
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Profils sauvegardés</h1><span class="tag tag-cyan">${saved.length} profils</span></div>
+      <div class="page-sub">Talents que vous avez mis de côté pour une opportunité future</div>
+    </div>
+    <div class="page-body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+        ${saved.map(t=>`
+        <div class="profile-card">
+          <div class="pc-banner" style="background:${t.banner}">
+            <div class="pc-av" style="background:${t.avColor};color:${t.avTxt}">${t.initials}</div>
+            ${t.formats.includes('video')?'<div class="pc-vid-badge">● Vidéo</div>':''}
+          </div>
+          <div class="pc-body">
+            <div class="pc-name">${t.name}</div>
+            <div class="pc-title">${t.title} · ${t.avail}</div>
+            <div class="pc-tags">${t.skills.map(s=>`<span class="tag tag-cyan">${s}</span>`).join('')}</div>
+            <div class="pc-score">
+              <span style="font-size:11px;color:var(--muted);font-family:DM Mono,monospace">SCORE</span>
+              <div class="pc-score-bar"><div class="pc-score-fill" style="width:${t.score}%"></div></div>
+              <span class="pc-score-num">${t.score}</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <button class="btn btn-primary" onclick="viewTalentProfile('${t.initials}')" style="flex:1;font-size:12px;padding:7px">Voir profil</button>
+              <button class="btn btn-ghost" onclick="saveProfile('${t.initials}');recPage('saved')" style="font-size:12px;padding:7px">Retirer 🗑</button>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderPipeline(c) {
+  const stages = [
+    {key:'contacted',label:'Contacté',color:'rgba(106,127,150,.15)',border:'rgba(106,127,150,.3)'},
+    {key:'replied',label:'A répondu',color:'rgba(139,107,255,.12)',border:'rgba(139,107,255,.3)'},
+    {key:'interview',label:'Entretien',color:'rgba(244,166,41,.12)',border:'rgba(244,166,41,.3)'},
+    {key:'offer',label:'Offre envoyée',color:'rgba(0,240,200,.12)',border:'rgba(0,240,200,.3)'},
+    {key:'hired',label:'Embauché 🎉',color:'rgba(74,222,128,.12)',border:'rgba(74,222,128,.3)'},
+  ];
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Pipeline de recrutement</h1><button class="btn btn-amber" onclick="recPage('search')">+ Ajouter des talents</button></div>
+      <div class="page-sub">${Object.values(STATE.pipeline).flat().length} candidats en cours · 0 embauche ce mois</div>
+    </div>
+    <div class="page-body">
+      <div class="kanban">
+        ${stages.map(s=>`
+        <div class="kanban-col">
+          <div class="kanban-header" style="background:${s.color};border:1px solid ${s.border}">
+            <span style="font-size:12px;font-weight:600">${s.label}</span>
+            <span class="kanban-count" style="background:${s.border};color:var(--text)">${STATE.pipeline[s.key].length}</span>
+          </div>
+          ${STATE.pipeline[s.key].map(card=>`
+          <div class="kanban-card" onclick="viewTalentProfile('${card.av}')">
+            <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+              <div class="kc-av" style="background:${card.color};color:${card.txt}">${card.av}</div>
+              <div>
+                <div class="kc-name">${card.name}</div>
+                <div class="kc-role">${card.role}</div>
+              </div>
+            </div>
+            <div class="kc-foot">
+              <span>${card.days}</span>
+              <span class="bebas" style="color:var(--cyan);font-size:16px">${card.score}</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:8px">
+              <button onclick="event.stopPropagation();movePipeline('${card.id}','${s.key}')" style="font-size:10px;padding:3px 8px;border-radius:5px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer">→ Étape suivante</button>
+            </div>
+          </div>`).join('')}
+          ${STATE.pipeline[s.key].length === 0 ? '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;border:1px dashed var(--border);border-radius:8px">Vide</div>' : ''}
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function movePipeline(id, fromStage) {
+  const stages = ['contacted','replied','interview','offer','hired'];
+  const idx = stages.indexOf(fromStage);
+  if (idx >= stages.length - 1) { notify('Déjà au stade final !','info'); return; }
+  const nextStage = stages[idx + 1];
+  const card = STATE.pipeline[fromStage].find(c=>c.id===id || c.av===id);
+  if (!card) return;
+  STATE.pipeline[fromStage] = STATE.pipeline[fromStage].filter(c=>c.id!==id && c.av!==id);
+  STATE.pipeline[nextStage].push(card);
+  renderPipeline(document.getElementById('rec-content'));
+  notify(`${card.name} déplacé vers "${['A répondu','Entretien','Offre envoyée','Embauché 🎉'][idx]}"`, 'success');
+}
+
+function renderRecruiterBilling(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Abonnement & Facturation</h1></div>
+      <div class="page-sub">Plan actuel : <strong class="text-amber">Studio</strong> · Renouvellement le 01/02/2025</div>
+    </div>
+    <div class="page-body">
+      <div class="warn-banner mb20">⚡ Vous avez utilisé 18/25 contacts ce mois. Il vous reste <strong>7 contacts</strong>. Renouvellement dans 12 jours.</div>
+      <div class="grid3 mb20" style="align-items:start">
+        <div class="plan-card">
+          <div class="plan-name" style="font-size:22px;color:var(--muted)">DISCOVERY</div>
+          <div style="margin-bottom:12px"><span class="plan-price" style="font-size:26px">0€</span><span class="plan-period">/lecture seule</span></div>
+          ${[['Accès profils (lecture)','✓'],['0 contacts/mois','–'],['Filtres basiques','✓'],['Pipeline','✗'],['Intégration ATS','✗']].map(([f,c])=>`
+          <div class="plan-feature ${c==='✗'?'inactive':''}"><span class="pf-check" style="color:${c==='✓'?'#4ade80':'var(--muted)'}">${c}</span>${f}</div>`).join('')}
+          <button class="btn btn-ghost btn-full mt12" onclick="notify('Vous êtes sur un meilleur plan !','info')">Plan inférieur</button>
+        </div>
+        <div class="plan-card current">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div class="plan-name">STUDIO</div><span class="tag tag-amber">Actuel</span>
+          </div>
+          <div style="margin-bottom:12px"><span class="plan-price" style="color:var(--amber)">149€</span><span class="plan-period">/mois</span></div>
+          ${[['Profils illimités en lecture','✓'],['25 contacts/mois','✓'],['Filtres IA avancés','✓'],['Pipeline candidats','✓'],['Rapport D&I','✓'],['Intégration ATS','✓']].map(([f,c])=>`
+          <div class="plan-feature"><span class="pf-check" style="color:var(--cyan)">${c}</span>${f}</div>`).join('')}
+        </div>
+        <div class="plan-card">
+          <div class="plan-name">ENTERPRISE</div>
+          <div style="margin-bottom:12px"><span class="plan-price">Sur devis</span></div>
+          ${[['Contacts illimités','✓'],['Multi-sièges','✓'],['SSO / SAML','✓'],['SLA 99.9%','✓'],['API dédiée','✓'],['CSM dédié','✓']].map(([f,c])=>`
+          <div class="plan-feature"><span class="pf-check" style="color:var(--violet)">${c}</span>${f}</div>`).join('')}
+          <button class="btn btn-ghost btn-full mt12" onclick="notify('Un commercial vous contacte sous 24h','success')">Contacter les ventes</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📊 Utilisation ce mois</div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Contacts envoyés</span><span class="font-mono" style="color:var(--amber)">18 / 25</span></div>
+            <div class="progress"><div class="progress-fill" style="width:72%;background:var(--amber)"></div></div>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Profils consultés</span><span class="font-mono text-cyan">247 / ∞</span></div>
+            <div class="progress"><div class="progress-fill" style="width:100%;background:var(--cyan)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>Taux de réponse</span><span class="font-mono" style="color:#4ade80">72%</span></div>
+            <div class="progress"><div class="progress-fill" style="width:72%;background:#4ade80"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">💳 Historique de facturation</div>
+          ${[['Fév. 2025','149,00 €','En attente'],['Jan. 2025','149,00 €','Payé'],['Déc. 2024','149,00 €','Payé'],['Nov. 2024','149,00 €','Payé']].map(([d,m,s])=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span>${d}</span><span class="text-muted">${m}</span>
+            <span style="color:${s==='Payé'?'#4ade80':s==='En attente'?'var(--amber)':'var(--rose)'};font-size:11px">${s}</span>
+            <button class="btn btn-ghost" onclick="notify('Facture téléchargée','success')" style="font-size:11px;padding:4px 10px">PDF</button>
+          </div>`).join('')}
+          <button class="btn btn-ghost btn-full mt12" onclick="notify('Méthode de paiement modifiable dans Stripe Customer Portal','info')">Modifier la carte bancaire</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRecruiterSettings(c) {
+  c.innerHTML = `
+    <div class="page-header">
+      <div class="page-title-row"><h1 class="page-title">Paramètres</h1></div>
+      <div class="page-sub">Compte entreprise, équipe et intégrations</div>
+    </div>
+    <div class="page-body">
+      <div class="grid2" style="align-items:start">
+        <div>
+          <div class="card mb14">
+            <div class="card-title">🏢 Profil entreprise</div>
+            <div class="field"><label>Nom de l'entreprise</label><input type="text" value="TechVision SAS" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+            <div class="field"><label>SIRET</label><input type="text" value="12345678901234" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"><div style="font-size:11px;color:#4ade80;margin-top:4px">✓ Vérifié via API INSEE</div></div>
+            <div class="field"><label>Site web</label><input type="text" value="https://techvision.io" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+            <div class="field"><label>Description (visible par les candidats)</label><textarea style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none;resize:vertical;min-height:80px">Startup IA Series A — on construit des outils d'analyse pour les entreprises industrielles. Équipe de 45 personnes, remote-first, culture très orientée engineering.</textarea></div>
+            <button class="btn btn-primary btn-full" onclick="notify('Profil entreprise sauvegardé','success')">Sauvegarder</button>
+          </div>
+          <div class="card">
+            <div class="card-title">🔗 Intégrations ATS</div>
+            ${[['Greenhouse','Connecté ✓','#4ade80'],['Lever','Non connecté','var(--muted)'],['Workday','Non connecté','var(--muted)'],['BambooHR','Non connecté','var(--muted)']].map(([s,st,c])=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px">${s}</span>
+              <span style="font-size:12px;color:${c}">${st}</span>
+              <button class="btn btn-ghost" onclick="notify('${s}: ${st.includes('Connecté')?'déconnecté':'connexion OAuth initiée'}','info')" style="font-size:11px;padding:4px 10px">${st.includes('Connecté')?'Retirer':'Connecter'}</button>
+            </div>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="card mb14">
+            <div class="card-title"><span class="ct-label">👥 Membres de l'équipe</span><button class="btn btn-ghost" onclick="notify('Invitation envoyée','success')" style="font-size:11px;padding:5px 10px">+ Inviter</button></div>
+            ${[['Marc Dubois','marc@techvision.io','Admin','var(--amber)'],['Lucie Martin','lucie@techvision.io','Recruteur','var(--cyan)'],['Alexis Chen','alexis@techvision.io','Lecteur','var(--muted)']].map(([n,e,r,c])=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+              <div class="avatar" style="width:32px;height:32px;font-size:11px;background:${c}22;color:${c};border:1px solid ${c}33">${n.split(' ').map(p=>p[0]).join('')}</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">${n}</div><div style="font-size:11px;color:var(--muted)">${e}</div></div>
+              <span class="tag" style="background:${c}11;border-color:${c}22;color:${c};font-size:10px">${r}</span>
+            </div>`).join('')}
+          </div>
+          <div class="card mb14">
+            <div class="card-title">🛡 Anti-biais — Mode anonyme</div>
+            <div class="info-banner mb12">Activez le mode anonyme pour masquer les noms, photos et informations personnelles non-essentielles lors de la première sélection.</div>
+            <div class="toggle-wrap">
+              <div class="toggle-info"><div class="ti-label">Mode anonyme lors de la recherche</div><div class="ti-desc">Noms et photos cachés au premier tri</div></div>
+              <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-info"><div class="ti-label">Rapport D&I automatique</div><div class="ti-desc">Analyse mensuelle de la diversité du pipeline</div></div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+// ════════════════════════════════════════
+// ADMIN PAGES
+// ════════════════════════════════════════
+function adminPage(page) {
+  document.querySelectorAll('#screen-admin .nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === page);
+  });
+  const c = document.getElementById('admin-content');
+
+  if (page === 'overview') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Vue d'ensemble CANDID</h1><div class="tag tag-violet">Admin · Lundi 20 Jan 2025</div></div>
+        <div class="page-sub">Plateforme opérationnelle · 99.7% uptime · 7 alertes modération</div>
+      </div>
+      <div class="page-body">
+        <div class="grid4 mb20">
+          <div class="stat-card"><div class="stat-num">48<span style="font-size:24px">K</span></div><div class="stat-label">Candidats inscrits</div><div class="stat-change up">↑ +234 aujourd'hui</div></div>
+          <div class="stat-card"><div class="stat-num text-amber">1.2<span style="font-size:24px">K</span></div><div class="stat-label">Entreprises actives</div><div class="stat-change up">↑ +12 ce mois</div></div>
+          <div class="stat-card"><div class="stat-num text-cyan">51.8<span style="font-size:20px">K€</span></div><div class="stat-label">MRR</div><div class="stat-change up">↑ +8% vs. mois dernier</div></div>
+          <div class="stat-card"><div class="stat-num text-violet">7</div><div class="stat-label">Alertes modération</div><div class="stat-change down">↑ +3 depuis hier</div></div>
+        </div>
+        <div class="grid2 mb20">
+          <div class="card">
+            <div class="card-title">📊 Inscriptions — 30 derniers jours</div>
+            <div class="chart-bar" style="height:100px">
+              ${[12,18,15,22,19,28,24,31,27,35,29,38,33,41,36,44,39,47,42,50,45,52,47,55,49,57,51,59,54,62].map(v=>`
+              <div style="flex:1;display:flex;align-items:flex-end">
+                <div style="height:${v/62*100}%;width:100%;background:linear-gradient(to top,var(--cyan2),var(--violet));opacity:.6;border-radius:2px 2px 0 0;min-height:4px"></div>
+              </div>`).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px"><span>Candidats</span><span>Recruteurs</span><span>Total</span></div>
+          </div>
+          <div class="card">
+            <div class="card-title">💰 Répartition MRR</div>
+            ${[['Pro Talent (9€ × 1800)','16 200 €',56,'var(--cyan)'],['Studio Recruteur (149€ × 180)','26 820 €',37,'var(--amber)'],['Boosts profils','2 500 €',5,'var(--violet)'],['Credits contacts','2 280 €',4,'var(--rose)']].map(([l,m,p,c])=>`
+            <div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${l}</span><span style="color:${c};font-family:DM Mono,monospace">${m}</span></div>
+              <div class="progress"><div class="progress-fill" style="width:${p}%;background:${c}"></div></div>
+            </div>`).join('')}
+            <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-size:14px;font-weight:600"><span>Total MRR</span><span class="text-cyan">47 800 €</span></div>
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="card">
+            <div class="card-title">🔴 Alertes actives</div>
+            ${MODERATION.slice(0,4).map(m=>`
+            <div onclick="adminPage('moderation')" style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">
+              <div style="width:7px;height:7px;border-radius:50%;background:${m.severity==='high'?'var(--rose)':m.severity==='medium'?'var(--amber)':'var(--muted)'};margin-top:5px;flex-shrink:0"></div>
+              <div><div style="font-size:12px;font-weight:500">${m.user}</div><div style="font-size:11px;color:var(--muted)">${m.desc.slice(0,40)}…</div></div>
+            </div>`).join('')}
+            <button class="btn btn-ghost btn-full mt12" onclick="adminPage('moderation')">Voir tout →</button>
+          </div>
+          <div class="card">
+            <div class="card-title">🏢 Entreprises en attente</div>
+            ${ADMIN_USERS.filter(u=>u.role==='recruiter'&&u.status==='pending').map(u=>`
+            <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+              <div class="avatar" style="width:32px;height:32px;font-size:11px;background:rgba(244,166,41,.1);color:var(--amber);border:1px solid rgba(244,166,41,.2)">${u.name.slice(0,2).toUpperCase()}</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.email}</div></div>
+              <div style="display:flex;gap:4px">
+                <button onclick="approveCompany('${u.name}')" style="font-size:11px;padding:4px 8px;background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2);border-radius:5px;cursor:pointer">✓</button>
+                <button onclick="notify('${u.name} refusée','info')" style="font-size:11px;padding:4px 8px;background:rgba(255,77,106,.1);color:var(--rose);border:1px solid rgba(255,77,106,.2);border-radius:5px;cursor:pointer">✕</button>
+              </div>
+            </div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-title">📈 Indicateurs clés</div>
+            ${[['Taux de conversion Free→Pro','3.8%','var(--cyan)'],['Taux de churn mensuel','2.1%','#4ade80'],['NPS (dernier trimestre)','67','var(--cyan)'],['Délai moyen embauche','8.2j','var(--amber)'],['Taux réponse candidats','72%','#4ade80'],['Score anti-biais moyen','81/100','var(--violet)']].map(([l,v,c])=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
+              <span style="color:var(--muted)">${l}</span>
+              <span style="font-family:DM Mono,monospace;color:${c};font-weight:500">${v}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+
+  } else if (page === 'users') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Utilisateurs</h1><div style="display:flex;gap:8px"><button class="btn btn-ghost">Exporter CSV</button></div></div>
+        <div class="page-sub">${ADMIN_USERS.length} utilisateurs · ${ADMIN_USERS.filter(u=>u.role==='candidate').length} candidats · ${ADMIN_USERS.filter(u=>u.role==='recruiter').length} recruteurs</div>
+      </div>
+      <div class="page-body">
+        <div class="filter-row mb14">
+          <div class="search-bar" style="flex:1"><span style="color:var(--muted)">🔍</span><input type="text" placeholder="Rechercher par email, nom..."></div>
+          <span class="filter-chip active">Tous</span>
+          <span class="filter-chip" onclick="notify('Filtre candidats','info')">Candidats</span>
+          <span class="filter-chip" onclick="notify('Filtre recruteurs','info')">Recruteurs</span>
+          <span class="filter-chip" onclick="notify('Filtre suspendus','info')">Suspendus</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Utilisateur</th><th>Rôle</th><th>Statut</th><th>Plan</th><th>Créé le</th><th>Dernière connexion</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              ${ADMIN_USERS.map(u=>`
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div class="avatar" style="width:32px;height:32px;font-size:11px;background:${u.role==='recruiter'?'rgba(244,166,41,.1)':'rgba(0,240,200,.1)'};color:${u.role==='recruiter'?'var(--amber)':'var(--cyan)'};border:1px solid ${u.role==='recruiter'?'rgba(244,166,41,.2)':'rgba(0,240,200,.2)'}">${u.name.split(' ').map(p=>p[0]).join('').slice(0,2)}</div>
+                    <div><div style="font-size:13px;font-weight:500">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.email}</div></div>
+                  </div>
+                </td>
+                <td><span class="tag ${u.role==='recruiter'?'tag-amber':'tag-cyan'}" style="font-size:11px">${u.role==='recruiter'?'Recruteur':'Candidat'}</span></td>
+                <td><span class="badge badge-${u.status==='active'?'active':u.status==='pending'?'pending':'suspended'}">${{active:'Actif',pending:'En attente',suspended:'Suspendu'}[u.status]}</span></td>
+                <td><span style="font-family:DM Mono,monospace;font-size:12px;color:${u.plan==='Pro'?'var(--cyan)':u.plan==='Studio'?'var(--amber)':u.plan==='Enterprise'?'var(--violet)':'var(--muted)'}">${u.plan}</span></td>
+                <td style="color:var(--muted);font-size:12px">${u.created}</td>
+                <td style="color:var(--muted);font-size:12px">${u.lastLogin}</td>
+                <td>
+                  <div style="display:flex;gap:4px">
+                    <button onclick="notify('Profil de ${u.name} ouvert','info')" style="font-size:11px;padding:4px 8px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted)">Voir</button>
+                    <button onclick="notify('${u.name} ${u.status==='suspended'?'réactivé':'suspendu'}','${u.status==='suspended'?'success':'info'}')" style="font-size:11px;padding:4px 8px;background:${u.status==='suspended'?'rgba(74,222,128,.08)':'rgba(255,77,106,.08)'};border:1px solid ${u.status==='suspended'?'rgba(74,222,128,.2)':'rgba(255,77,106,.2)'};border-radius:5px;cursor:pointer;color:${u.status==='suspended'?'#4ade80':'var(--rose)'}">${u.status==='suspended'?'Réactiver':'Suspendre'}</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+  } else if (page === 'moderation') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Modération</h1><span class="tag tag-rose">${MODERATION.length} alertes</span></div>
+        <div class="page-sub">Queue de modération — traitez par ordre de priorité</div>
+      </div>
+      <div class="page-body">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${MODERATION.map((m,i)=>`
+          <div class="card" style="border-left:3px solid ${m.severity==='high'?'var(--rose)':m.severity==='medium'?'var(--amber)':'var(--border)'}">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <div style="width:36px;height:36px;border-radius:9px;background:${m.severity==='high'?'rgba(255,77,106,.1)':m.severity==='medium'?'rgba(244,166,41,.1)':'rgba(106,127,150,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${{content:'🎥',spam:'📨',identity:'👤',payment:'💳'}[m.type]}</div>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                  <span style="font-size:14px;font-weight:600">${m.user}</span>
+                  <span class="tag ${m.severity==='high'?'tag-rose':m.severity==='medium'?'tag-amber':'tag-gray'}" style="font-size:10px">${{high:'HAUTE',medium:'MOYENNE',low:'FAIBLE'}[m.severity]}</span>
+                  <span style="font-size:11px;color:var(--muted)">${m.date}</span>
+                  ${m.reports>0?`<span style="font-size:11px;color:var(--rose)">${m.reports} signalement(s)</span>`:''}
+                </div>
+                <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${m.desc}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button onclick="resolveModeration(${i},'approve')" style="font-size:12px;padding:6px 12px;background:rgba(74,222,128,.08);color:#4ade80;border:1px solid rgba(74,222,128,.2);border-radius:7px;cursor:pointer">✓ Aucune action</button>
+                  <button onclick="resolveModeration(${i},'warn')" style="font-size:12px;padding:6px 12px;background:rgba(244,166,41,.08);color:var(--amber);border:1px solid rgba(244,166,41,.2);border-radius:7px;cursor:pointer">⚠ Avertir l'utilisateur</button>
+                  <button onclick="resolveModeration(${i},'suspend')" style="font-size:12px;padding:6px 12px;background:rgba(255,77,106,.08);color:var(--rose);border:1px solid rgba(255,77,106,.2);border-radius:7px;cursor:pointer">🚫 Suspendre</button>
+                  <button onclick="resolveModeration(${i},'ban')" style="font-size:12px;padding:6px 12px;background:rgba(255,77,106,.12);color:var(--rose);border:1px solid rgba(255,77,106,.3);border-radius:7px;cursor:pointer">🔨 Bannir définitivement</button>
+                </div>
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+
+  } else if (page === 'subscriptions') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Abonnements</h1></div>
+        <div class="page-sub">MRR total : <strong class="text-cyan">47 800 €</strong> · ARR projeté : <strong class="text-cyan">573 600 €</strong></div>
+      </div>
+      <div class="page-body">
+        <div class="grid4 mb20">
+          <div class="stat-card"><div class="stat-num text-cyan">1 800</div><div class="stat-label">Pro Talent actifs</div><div class="stat-change up">↑ +45 ce mois</div></div>
+          <div class="stat-card"><div class="stat-num text-amber">180</div><div class="stat-label">Studios actifs</div><div class="stat-change up">↑ +12</div></div>
+          <div class="stat-card"><div class="stat-num text-violet">8</div><div class="stat-label">Enterprise</div><div class="stat-change up">↑ +2</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--rose)">2.1%</div><div class="stat-label">Churn mensuel</div><div class="stat-change up">↓ -0.3% vs. mois</div></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Entreprise/Utilisateur</th><th>Plan</th><th>Montant</th><th>Statut</th><th>Prochain renouvellement</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${[['TechVision RH','Studio','149€/mois','active','01/02/2025'],['NeuralVentures','Enterprise','Sur devis','active','01/03/2025'],['StartupScale','Discovery','0€','pending','—'],['CloudScale','Studio','149€/mois','active','15/02/2025'],['Sofia Leclerc','Pro Talent','9€/mois','active','15/02/2025'],['Amina Rousseau','Pro Talent','9€/mois','active','22/02/2025'],['FakeCorp','—','—','suspended','—']].map(([n,p,m,s,d])=>`
+              <tr>
+                <td style="font-size:13px;font-weight:500">${n}</td>
+                <td><span class="tag ${p==='Enterprise'?'tag-violet':p.includes('Studio')?'tag-amber':p.includes('Pro')?'tag-cyan':'tag-gray'}" style="font-size:11px">${p}</span></td>
+                <td class="font-mono" style="font-size:12px;color:var(--muted)">${m}</td>
+                <td><span class="badge badge-${s}">${{active:'Actif',pending:'En attente',suspended:'Suspendu'}[s]}</span></td>
+                <td style="font-size:12px;color:var(--muted)">${d}</td>
+                <td>
+                  <button onclick="notify('Abonnement modifié','info')" style="font-size:11px;padding:4px 8px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted)">Gérer</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+  } else if (page === 'companies') {
+    c.innerHTML = `
+      <div class="page-header">
+        <div class="page-title-row"><h1 class="page-title">Entreprises en attente</h1><span class="tag tag-amber">3 en attente</span></div>
+        <div class="page-sub">Nouvelles inscriptions entreprises à valider manuellement</div>
+      </div>
+      <div class="page-body">
+        ${ADMIN_USERS.filter(u=>u.role==='recruiter'&&u.status==='pending').concat([
+          {name:'InnovateTech SAS',email:'rh@innovatetech.fr',created:'Aujourd\'hui'},
+          {name:'GrowthCo',email:'talent@growthco.io',created:'Hier'}
+        ]).map(u=>`
+        <div class="card mb12">
+          <div style="display:flex;align-items:flex-start;gap:14px">
+            <div class="avatar" style="width:48px;height:48px;font-size:16px;background:rgba(244,166,41,.1);color:var(--amber);border:1px solid rgba(244,166,41,.2)">${u.name.slice(0,2).toUpperCase()}</div>
+            <div style="flex:1">
+              <div style="font-size:15px;font-weight:700;margin-bottom:2px">${u.name}</div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${u.email} · Inscrit ${u.created}</div>
+              <div style="display:flex;gap:8px">
+                <span class="tag tag-green">✓ SIRET valide</span>
+                <span class="tag tag-green">✓ Email pro</span>
+                <span class="tag tag-amber">⏳ En attente CB</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end">
+              <button onclick="approveCompany('${u.name}')" class="btn btn-primary" style="font-size:12px;padding:7px 14px">✓ Approuver</button>
+              <button onclick="notify('${u.name} refusée','info')" class="btn btn-danger" style="font-size:12px;padding:7px 14px">✕ Refuser</button>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>`;
+  }
+}
+
+function resolveModeration(idx, action) {
+  const m = MODERATION[idx];
+  const msgs = {approve:`Alerte sur ${m.user} : aucune action`,warn:`Avertissement envoyé à ${m.user}`,suspend:`${m.user} suspendu(e)`,ban:`${m.user} banni(e) définitivement`};
+  notify(msgs[action], action==='approve'?'success':'info');
+  MODERATION.splice(idx,1);
+  document.getElementById('admin-mod-badge').textContent = MODERATION.length;
+  adminPage('moderation');
+}
+
+function approveCompany(name) {
+  notify(`${name} approuvée — accès activé !`, 'success');
+  document.getElementById('admin-comp-badge').textContent = Math.max(0, parseInt(document.getElementById('admin-comp-badge').textContent||0)-1);
+}
+
+// ════════════════════════════════════════
+// TALENT PROFILE MODAL
+// ════════════════════════════════════════
+function viewTalentProfile(initials) {
+  const t = TALENTS.find(t=>t.initials===initials);
+  if (!t) return;
+  const isSaved = STATE.savedProfiles.includes(t.initials);
+  openModal(t.name, `
+    <div>
+      <div style="background:${t.banner};height:80px;border-radius:10px;margin-bottom:32px;position:relative">
+        <div class="avatar" style="position:absolute;bottom:-20px;left:16px;width:52px;height:52px;background:${t.avColor};color:${t.avTxt};font-size:18px;border:3px solid var(--bg2)">${t.initials}</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:17px;font-weight:700">${t.name}</span>
+          <span class="tag tag-cyan" style="font-size:11px">${t.match}% match</span>
+          ${t.formats.includes('video')?'<span style="background:rgba(255,77,106,.1);color:var(--rose);font-size:10px;padding:2px 8px;border-radius:100px;font-weight:600">● Vidéo dispo</span>':''}
+        </div>
+        <div style="font-size:13px;color:var(--muted)">${t.title} · ${t.location} · ${t.exp} d'expérience</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">DISPONIBILITÉ</div><div style="font-size:13px;font-weight:500">${t.avail}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">SALAIRE SOUHAITÉ</div><div style="font-size:13px;font-weight:500">${t.salary}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">REMOTE</div><div style="font-size:13px;font-weight:500">${t.remote?'✓ Accepte le remote':'Présentiel'}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">SCORE CANDID</div><div style="font-family:Bebas Neue,sans-serif;font-size:24px;color:var(--cyan);line-height:1">${t.score}</div></div>
+      </div>
+      <div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Compétences</div><div style="display:flex;gap:6px;flex-wrap:wrap">${t.skills.map(s=>`<span class="tag tag-cyan">${s}</span>`).join('')}</div></div>
+      <div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;margin-bottom:8px">Formats disponibles</div><div style="display:flex;gap:6px;flex-wrap:wrap">${t.formats.map(f=>({video:'🎥 Pitch Vidéo',audio:'🎙 Audio Note',challenges:'⚡ Challenges',skillmap:'🧠 Carte Skills',portfolio:'🌐 Portfolio 3D',recommendations:'🤝 Recommandations'}[f]||f)).map(f=>`<span class="tag tag-gray">${f}</span>`).join('')}</div></div>
+      ${t.formats.includes('video')?`
+      <div class="vid-player" style="margin-bottom:14px">
+        <div style="position:absolute;inset:0;background:${t.banner};opacity:.6;border-radius:12px"></div>
+        <div class="vid-play" onclick="notify('Lecture de la vidéo de ${t.name}','info')">▶</div>
+        <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:4px;font-size:11px">${t.videoLen}</div>
+      </div>`:''}
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:11px;color:var(--muted);font-family:DM Mono,monospace;flex:1">SCORE CANDID</div>
+        <div style="flex:1;height:4px;background:var(--dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${t.score}%;background:linear-gradient(90deg,var(--cyan),var(--violet))"></div></div>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--cyan)">${t.score}</div>
+      </div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="${isSaved?`saveProfile('${t.initials}')`:`saveProfile('${t.initials}')`}">${isSaved?'🗑 Retirer des favoris':'🔖 Sauvegarder'}</button>
+     <button class="btn btn-amber" onclick="contactTalent('${t.initials}','${t.name}')">✉ Contacter ce talent</button>`
+  );
+}
+
+function saveProfile(initials) {
+  const idx = STATE.savedProfiles.indexOf(initials);
+  if (idx > -1) {
+    STATE.savedProfiles.splice(idx, 1);
+    notify('Retiré des favoris', 'info');
+  } else {
+    STATE.savedProfiles.push(initials);
+    notify('Profil sauvegardé !', 'success');
+  }
+}
+
+function contactTalent(initials, name) {
+  closeModal();
+  openModal('Contacter ' + name, `
+    <div class="warn-banner mb16" style="font-size:12px">⚡ Il vous reste <strong>7 contacts</strong> ce mois (plan Studio — 25/mois).</div>
+    <div class="field"><label>Objet de la proposition</label><input type="text" id="contact-subject" value="Opportunité — ${name}" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+    <div class="field"><label>Message personnalisé</label><textarea id="contact-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none;resize:vertical;min-height:120px">Bonjour,
+
+Votre profil correspond exactement à ce que nous cherchons pour notre équipe. Nous construisons [décrire le projet], et votre expertise en [compétence] serait précieuse.
+
+Budget : [XX]K€ · Remote : [oui/non] · Démarrage : [date]
+
+Seriez-vous disponible pour un échange de 30 minutes ?</textarea></div>
+    <div class="success-banner" style="font-size:12px">🛡 Ce message sera modéré par notre IA anti-spam avant envoi. Votre email ne sera pas divulgué.</div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+     <button class="btn btn-amber" onclick="sendContact('${name}')">Envoyer la proposition ✉</button>`
+  );
+}
+
+function sendContact(name) {
+  closeModal();
+  // Add to pipeline
+  const t = TALENTS.find(t=>t.name===name);
+  if (t && !STATE.pipeline.contacted.find(c=>c.id===t.initials)) {
+    STATE.pipeline.contacted.push({id:t.initials,name:t.name,role:t.title,score:t.score,av:t.initials,color:t.avColor.replace('135deg,','').split(',')[0]+'22)',txt:t.avTxt==='white'?'white':'var(--cyan)',days:'À l\'instant'});
+  }
+  notify(`Proposition envoyée à ${name} ! Ajouté au pipeline.`, 'success');
+}
+
+// ════════════════════════════════════════
+// FORMAT ACTIONS
+// ════════════════════════════════════════
+function viewMyVideo() {
+  openModal('Mon Pitch Vidéo — 58 secondes', `
+    <div class="vid-player" style="margin-bottom:14px;position:relative">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0D1B2A,#1A3A4A);opacity:0.8;border-radius:12px"></div>
+      <div class="vid-play" onclick="notify('Lecture en cours…','info')">▶</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="tag tag-cyan">⏱ 58 secondes</div>
+      <div class="tag tag-gray">👁 247 vues</div>
+      <div class="tag tag-violet">⭐ Score vocal IA : 92/100</div>
+    </div>
+    <div class="info-banner mt16" style="font-size:12px">💡 Conseil IA : votre intro est excellente. Pensez à mentionner un résultat chiffré dans les 20 premières secondes pour +15% d'engagement.</div>`,
+    `<button class="btn btn-ghost" onclick="notify('Vidéo supprimée. Uploadez-en une nouvelle.','info');closeModal()">🗑 Remplacer</button><button class="btn btn-primary" onclick="closeModal()">OK</button>`
+  );
+}
+
+function viewSkillMap() {
+  openModal('Carte de Compétences IA', `
+    <div style="text-align:center;padding:20px;background:var(--bg3);border-radius:12px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px">Constellation de vos compétences validées</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+        ${[['Figma',95],['Design System',88],['User Research',82],['Prototypage',90],['Accessibilité',75],['FigJam',70],['Figma Variables',85],['Design Tokens',80]].map(([s,v])=>`
+        <div style="background:rgba(0,240,200,${v/200});border:1px solid rgba(0,240,200,${v/150});border-radius:100px;padding:5px 12px;font-size:12px;color:var(--cyan)">${s} <span style="opacity:.7">${v}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="success-banner" style="font-size:12px">✅ 8 compétences validées · Score global : 88/100</div>`
+  );
+}
+
+function recordAudio() {
+  openModal('Enregistrer mon Audio Note', `
+    <div class="info-banner mb16" style="font-size:12px">🎙 3 minutes maximum. Parlez naturellement, présentez-vous comme si vous parliez à un recruteur au téléphone.</div>
+    <div style="text-align:center;padding:32px;background:var(--bg3);border-radius:12px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="font-size:48px;margin-bottom:12px">🎙</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:20px">Prêt à enregistrer ?</div>
+      <button class="btn btn-primary" onclick="this.textContent='⏹ Arrêter (0:03)';notify('Enregistrement démarré','info')">▶ Démarrer l\'enregistrement</button>
+    </div>
+    <div class="warn-banner" style="font-size:12px">⚠ Votre audio sera analysé par notre IA pour détecter des indicateurs de communication (clarté, confiance, enthousiasme). Ces données restent sur CANDID.</div>`
+  );
+}
+
+function doChallenge() {
+  openModal('Challenges techniques disponibles', `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${[{t:'UX Design Challenge',d:'Redesignez l\'onboarding d\'une app fintech en 45min',dur:'45 min',pts:'+8 pts',c:'var(--cyan)'},
+         {t:'User Research Sprint',d:'Analysez 3 interviews utilisateurs et synthétisez les insights',dur:'30 min',pts:'+6 pts',c:'var(--violet)'},
+         {t:'Accessibilité Audit',d:'Auditez une interface contre WCAG 2.1 et proposez des corrections',dur:'60 min',pts:'+10 pts',c:'var(--amber)'}].map(ch=>`
+      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px">${ch.t}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${ch.d}</div>
+          <div style="display:flex;gap:6px">
+            <span class="tag tag-gray">⏱ ${ch.dur}</span>
+            <span class="tag" style="background:${ch.c}11;border-color:${ch.c}22;color:${ch.c}">${ch.pts}</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="notify('Challenge démarré ! Bonne chance 💪','success');closeModal()" style="font-size:12px;padding:8px 14px">Démarrer</button>
+      </div>`).join('')}
+    </div>`
+  );
+}
+
+function editPortfolio() {
+  openModal('Portfolio 3D — Mes Projets', `
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+      ${[['🏦 Refonte App Fintech','UX Design · 2024','Refonte complète de l\'app mobile Lydia. +34% conversion.'],['🏥 Dashboard Healthtech','Product Design · 2023','Interface de monitoring pour médecins. Prix UX Award 2023.'],['🛒 E-commerce Redesign','Design System · 2022','Design system complet pour une marketplace 500K utilisateurs.']].map(([t,s,d])=>`
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:flex-start">
+        <div style="font-size:24px">${t.split(' ')[0]}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:2px">${t.replace(t.split(' ')[0]+' ','')}</div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">${s}</div><div style="font-size:12px;color:var(--muted)">${d}</div></div>
+        <button onclick="notify('Projet modifié','info')" style="font-size:11px;padding:4px 8px;background:var(--surface);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted)">Modifier</button>
+      </div>`).join('')}
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="notify('Nouveau projet ajouté !','success')">+ Ajouter un projet</button>`
+  );
+}
+
+function inviteRecommendation() {
+  openModal('Inviter une recommandation vidéo', `
+    <div class="info-banner mb16" style="font-size:12px">🤝 Invitez un ancien manager ou collègue à enregistrer une recommandation vidéo de 60s sur votre profil.</div>
+    <div class="field"><label>Email de la personne</label><input type="email" placeholder="ancien.manager@entreprise.com" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>
+    <div class="field"><label>Votre relation</label><select style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"><option>Manager direct</option><option>Collègue</option><option>Client</option><option>Mentor</option></select></div>
+    <div class="field"><label>Message personnel (optionnel)</label><textarea placeholder="Bonjour, j'aimerais que tu témoignes de notre collaboration sur [projet]…" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none;resize:vertical;min-height:80px"></textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="notify('Invitation envoyée !','success');closeModal()">Envoyer l'invitation ✉</button>`
+  );
+}
+
+function openProfilePreview() {
+  openModal('Aperçu de votre profil public', `
+    <div style="background:linear-gradient(135deg,#0D1B2A,#1A3A4A);height:90px;border-radius:12px;margin-bottom:32px;position:relative">
+      <div class="avatar" style="position:absolute;bottom:-20px;left:16px;width:56px;height:56px;background:linear-gradient(135deg,#00F0C8,#006B5A);color:var(--bg);font-size:20px;border:3px solid var(--bg2)">SL</div>
+      <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:3px 10px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:5px"><span style="width:5px;height:5px;border-radius:50%;background:var(--rose)"></span>● Vidéo dispo</div>
+    </div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:2px">Sofia Leclerc</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Lead UX Designer · Paris · Dispo janvier 2025</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="tag tag-cyan">Figma</span><span class="tag tag-cyan">Design System</span><span class="tag tag-amber">Fintech</span><span class="tag tag-violet">8 ans</span>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="font-size:11px;color:var(--muted);font-family:DM Mono,monospace;flex:1">SCORE CANDID</span>
+      <div style="flex:1;height:3px;background:var(--dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:88%;background:linear-gradient(90deg,var(--cyan),var(--violet))"></div></div>
+      <span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--cyan)">88</span>
+    </div>
+    <div style="display:flex;gap:8px"><span class="tag tag-gray">🎥 Pitch Vidéo</span><span class="tag tag-gray">🌐 Portfolio 3D</span><span class="tag tag-gray">⚡ 3 Défis</span></div>`
+  );
+}
+
+function openDeleteAccountModal() {
+  openModal('Supprimer mon compte', `
+    <div class="warn-banner mb16">⚠ Cette action est <strong>irréversible</strong>. Toutes vos données seront effacées définitivement sous 30 jours.</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Conformément au RGPD (Art. 17), vous avez le droit à l'effacement. Voici ce qui sera supprimé :</p>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${['Profil public et toutes les données personnelles','Vidéos, audios et fichiers uploadés','Historique des messages','Données analytiques anonymisées après 30j','Vecteur de profil IA (Pinecone)'].map(i=>`<li style="font-size:13px;color:var(--muted);display:flex;gap:8px"><span style="color:var(--rose)">✕</span>${i}</li>`).join('')}
+    </ul>
+    <div class="field"><label>Pour confirmer, tapez "SUPPRIMER MON COMPTE"</label><input type="text" id="delete-confirm" placeholder="SUPPRIMER MON COMPTE" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:DM Sans,sans-serif;outline:none"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Annuler</button><button class="btn btn-danger" onclick="confirmDelete()">🗑 Confirmer la suppression</button>`
+  );
+}
+
+function confirmDelete() {
+  const v = document.getElementById('delete-confirm').value;
+  if (v !== 'SUPPRIMER MON COMPTE') { notify('Veuillez taper exactement "SUPPRIMER MON COMPTE"','error'); return; }
+  closeModal();
+  notify('Demande de suppression enregistrée. Email de confirmation envoyé.','info');
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+renderAuth('login');
+</script>
+</body>
+</html>
